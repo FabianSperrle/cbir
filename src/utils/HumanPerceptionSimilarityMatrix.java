@@ -6,7 +6,7 @@ import java.util.Arrays;
 public class HumanPerceptionSimilarityMatrix {
 
 	/**
-	 * Creates the similarity for one channel (or the gray values) of an image
+ * Creates the similarity for one channel (or the gray values) of an image
 	 * for the specified number of bins. The similarity matrix should be
 	 * correspond more to the human perception. To achieve that the RGB colors
 	 * are converted to the L*ab color space. Usage example:
@@ -47,10 +47,6 @@ public class HumanPerceptionSimilarityMatrix {
 			for (int j = 0; j < numBins; j++) {
 				similarityMatrix[i][j] = 1 - LabDistance(colorLookupTable[i], colorLookupTable[j]) / maxdistance;
 			}
-		}
-
-		for (double[] ds : similarityMatrix) {
-			System.out.println(Arrays.toString(ds));
 		}
 
 		return similarityMatrix;
