@@ -1,25 +1,14 @@
 package converter;
 
+import utils.Function3;
+
 import java.awt.image.BufferedImage;
 
 /**
  * Created by fabian on 03.06.2016.
  */
 public class GrayScaleConverter {
-    /**
-     * Functional Interface for a transformation function.
-     * To be applied to every pixel with the RGB values as input.
-     * Returns a new greyscale RBG value.
-     *
-     * @param <A>
-     * @param <B>
-     * @param <C>
-     * @param <D>
-     */
-    @FunctionalInterface
-    private interface Function3<A, B, C, D> {
-        public D apply(A a, B b, C c);
-    }
+
     /**
      * Calculate a gray scale version of the input {@link BufferedImage} by
      * averaging the values of the red, green and blue channel.

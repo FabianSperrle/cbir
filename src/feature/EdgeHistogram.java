@@ -3,91 +3,58 @@ package feature;
 import converter.GrayScaleConverter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import utils.Convolution;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.ConvolveOp;
-import java.awt.image.Kernel;
-import java.awt.image.Raster;
-import java.beans.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
 
 /**
  * Created by fabian on 03.06.2016.
  */
 public class EdgeHistogram implements FeatureDescriptor {
-    private ConvolveOp verticalSobel;
-    private ConvolveOp horizontalSobel;
+    private double[] verticalSobel;
+    private double[] horizontalSobel;
     private Logger logger = LogManager.getLogger(EdgeHistogram.class);
 
     public EdgeHistogram() {
-        float[] vertical = {1, 0, -1,
+        this.verticalSobel = new double[]{1, 0, -1,
                 2, 0, -2,
                 1, 0, -1};
-        Kernel verticalKernel = new Kernel(3, 3, vertical);
-        this.verticalSobel = new ConvolveOp(verticalKernel, ConvolveOp.EDGE_ZERO_FILL, null);
-
-        float[] horizontal = {1, 2, 1,
+        this.horizontalSobel = new double[]{1, 2, 1,
                 0, 0, -0,
                 -1, -2, -1};
-        Kernel horizontalKernel = new Kernel(3, 3, horizontal);
-        this.horizontalSobel = new ConvolveOp(horizontalKernel, ConvolveOp.EDGE_ZERO_FILL, null);
     }
 
-    public List<BufferedImage> getHistogram(BufferedImage im) {
+    public int[] getHistogram(BufferedImage im) {
         BufferedImage gray = GrayScaleConverter.RGB2GrayByAveraging(im);
 
-        BufferedImage vertResult = verticalSobel.filter(gray, null);
-        BufferedImage horResult = horizontalSobel.filter(gray, null);
+        double[][] resultX = Convolution.convolve(gray, verticalSobel, 3, 3);
+        double[][] resultY = Convolution.convolve(gray, horizontalSobel, 3, 3);
 
-        BufferedImage resultImage = new BufferedImage(im.getWidth(), im.getHeight(), im.getType());
-        int[] angles = new int[91];
-        for (int x = 0; x < resultImage.getWidth(); x++) {
-            for (int y = 0; y < resultImage.getHeight(); y++) {
-                Color vert = new Color(vertResult.getRGB(x, y));
-                Color hor = new Color(horResult.getRGB(x, y));
+        BufferedImage resultImage = new BufferedImage(resultY.length, resultY[0].length, BufferedImage.TYPE_BYTE_BINARY);
+        int[] angles = new int[360];
+        for (int x = 0; x < resultY.length; x++) {
+            for (int y = 0; y < resultY[0].length; y++) {
 
-                int red = Math.min(255, (int) Math.round(Math.hypot(vert.getRed(), hor.getRed())));
-                int green = Math.min(255, (int) Math.round(Math.hypot(vert.getGreen(), hor.getGreen())));
-                int blue = Math.min(255, (int) Math.round(Math.hypot(vert.getBlue(), hor.getBlue())));
+                // calculate the magnitude
+                double val = Math.hypot(resultX[x][y], resultY[x][y]);
 
-                resultImage.setRGB(x, y, new Color(red, green, blue).getRGB());
+                // don't forget the thresholding (the threshold is arbitrary).
+                if (val > 200) {
+                    resultImage.setRGB(x, y, Color.white.getRGB());
+                }
+                int v = (int) Math.round(Math.atan2(resultX[x][y], resultY[x][y]) * 180.0 / Math.PI) + 180;
+                if (v == 360) v = 0;
 
-                final int v = (int) Math.round(Math.atan2(vert.getRed(), hor.getRed()) * 180.0 / Math.PI);
                 angles[v]++;
             }
         }
 
-        for (int i = 0; i < 91; i++) {
-            int angle = angles[i];
-            logger.warn("angle = " + angle);
-        }
-
-        return Arrays.asList(vertResult, horResult, resultImage);
-    }
-
-    public static void main(String[] args) throws IOException {
-        JFrame frame = new JFrame("Gray Scale Image Comparison");
-        frame.setLayout(new BorderLayout());
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        //BufferedImage img = ImageIO.read(new File("101_ObjectCategories/airplanes/image_0020.jpg"));
-        BufferedImage img = ImageIO.read(new File("101_ObjectCategories/boy.jpg"));
-        EdgeHistogram e = new EdgeHistogram();
-        List<BufferedImage> images = e.getHistogram(img);
-        frame.getContentPane().add(new JLabel(new ImageIcon(img)), BorderLayout.NORTH);
-        frame.getContentPane().add(new JLabel(new ImageIcon(images.get(0))), BorderLayout.WEST);
-        frame.getContentPane().add(new JLabel(new ImageIcon(images.get(1))), BorderLayout.EAST);
-        frame.getContentPane().add(new JLabel(new ImageIcon(images.get(2))), BorderLayout.SOUTH);
-        frame.pack();
-
-        frame.setVisible(true);
+        return angles;
     }
 }
