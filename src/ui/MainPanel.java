@@ -62,15 +62,14 @@ public class MainPanel {
 	private BufferedImage img;
 
 	//The Feature Extraction Methods
-	ColourHistogram cHist;
-	EdgeHistogram eHist;
-	HaralickTexture hFeature;
+	private ColourHistogram cHist;
+	private EdgeHistogram eHist;
+	private HaralickTexture hFeature;
 
-	PicturePanel panel;
-	JLabel l;
-	int bins;
-	Map<String,Double> distI;
-	int counter = 0;
+	private PicturePanel panel;
+	private JLabel l;
+	private Map<String,Double> distI;
+	private int counter = 0;
 
 	public MainPanel () throws IOException{
 		fileSystemView = FileSystemView.getFileSystemView();
@@ -81,7 +80,7 @@ public class MainPanel {
 
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setLayout(new BorderLayout());
-		bins = 128;
+		int bins = 32;
 		cHist = new ColourHistogram(bins);
 
 		JLabel l = new JLabel();
@@ -146,9 +145,9 @@ public class MainPanel {
 			public void actionPerformed(ActionEvent arg0) {
 				switch (comboBoxFeature.getSelectedIndex()) {
 				case 0:
-					List<List<Integer>> imgHist= cHist.getHistogram(img);
+					List<List<double[]>> imgHist= cHist.getHistogram(img);
 
-					cpanel.getCHistListDict().entrySet()
+					cpanel.getColorHistograms().entrySet()
 							 .parallelStream()
 							 .forEach(entry -> computeQFD(entry, imgHist));
 
@@ -156,8 +155,8 @@ public class MainPanel {
 					break;
 				case 1:
 					eHist = new EdgeHistogram();
-					ArrayList<Integer> imgEHist = (ArrayList<Integer>) Arrays.stream( eHist.getHistogram(img) ).boxed().collect( Collectors.toList());
-					epanel.getEHistListDict().entrySet()
+					int[] imgEHist = eHist.getHistogram(img);
+					epanel.getEdgeHistograms().entrySet()
 					 .parallelStream()
 					 .forEach(entry -> computeED(entry, imgEHist));
 					updateThumbnails();
@@ -180,7 +179,7 @@ public class MainPanel {
 		//panel für results
 		panel = new PicturePanel();
 		JScrollPane listScroller = new JScrollPane(panel);
-		listScroller.setPreferredSize(new Dimension(800,800));
+		listScroller.setPreferredSize(new Dimension(650,400));
 		frame.add(listScroller,BorderLayout.SOUTH);
 		frame.pack();
 		frame.setVisible(true);
@@ -198,57 +197,56 @@ public class MainPanel {
 		sortedEntries.addAll(map.entrySet());
 		return sortedEntries;
 	}
-	private void computeQFD(Entry<String, ArrayList<List<Integer>>> entry, List<List<Integer>> imgHist){
-		System.out.println(counter);
-		String key = entry.getKey();
-		ArrayList<List<Integer>> hist = entry.getValue();
-		Double[] rgb = new Double[3];
-		
-		List<Integer> red = imgHist.get(0);
-		List<Integer> green = imgHist.get(1);
-		List<Integer> blue = imgHist.get(2);
 
-		List<Integer> red2 = hist.get(0);
-		List<Integer> green2 = hist.get(1);
-		List<Integer> blue2 = hist.get(2);
-		
-		double[] redArray = Arrays.stream(red.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
-		double[] redArray2 = Arrays.stream(red2.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
-		double[] greenArray = Arrays.stream(green.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
-		double[] greenArray2 = Arrays.stream(green2.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
-		double[] blueArray = Arrays.stream(blue.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
-		double[] blueArray2 = Arrays.stream(blue2.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
-		
-		rgb[0] = new Double (QuadraticFormDistance.getQuadricFormDistance(redArray, redArray2,4));
-		rgb[1] = new Double (QuadraticFormDistance.getQuadricFormDistance(greenArray, greenArray2,4));
-		rgb[2] = new Double (QuadraticFormDistance.getQuadricFormDistance(blueArray, blueArray2,4));
-		
-		Arrays.sort(rgb);
-		distI.put(key, rgb[rgb.length - 1]);
-		counter++;
-	}
-	private void computeQFD(Entry<String, ArrayList<Integer>> entry, ArrayList<Integer> imgHist){
+	private void computeQFD(Entry<String, double[]> entry, double[] imgHist){
 		System.out.println(counter);
 		String key = entry.getKey();
-		ArrayList<Integer> hist = entry.getValue();
-		
-		double[] array = Arrays.stream(imgHist.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
-		double[] array2 = Arrays.stream(hist.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
-		
-		distI.put(key, QuadraticFormDistance.getQuadricFormDistance(array, array2));
+		double[] hist = entry.getValue();
+
+
+		distI.put(key, QuadraticFormDistance.getQuadricFormDistance(hist, imgHist));
 		counter++;
 	}
-	private void computeED(Entry<String, ArrayList<Integer>> entry, ArrayList<Integer> imgHist){
+
+	private void computeQFD(Entry<String, List<List<double[]>>> entry, List<List<double[]>> imgHist){
 		System.out.println(counter);
 		String key = entry.getKey();
-		ArrayList<Integer> hist = entry.getValue();
+		List<List<double[]>> hist = entry.getValue();
+
+		double distance = 0;
+		// Iterate through cells
+		for (int i = 0; i < hist.size(); i++) {
+			List<double[]> cell = hist.get(i);
+			for (int j = 0; j < cell.size(); j++) {
+				double[] histogram1 = cell.get(j);
+				double[] histogram2 = imgHist.get(i).get(j);
+				distance += QuadraticFormDistance.getQuadricFormDistance(histogram1, histogram2);
+			}
+		}
+		distance /= hist.size() * 3;
 		
-		double[] array = Arrays.stream(imgHist.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
-		double[] array2 = Arrays.stream(hist.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
-		
-		distI.put(key, new Double(EuclidianDistance.getEuclidianDistance(array, array2)));
+		distI.put(key, distance);
 		counter++;
 	}
+
+	private void computeED(Entry<String, double[]> entry, double[] imgHist){
+		System.out.println(counter);
+		String key = entry.getKey();
+		double[] hist = entry.getValue();
+		
+		distI.put(key, EuclidianDistance.getEuclidianDistance(hist, imgHist));
+		counter++;
+	}
+
+	private void computeED(Entry<String, int[]> entry, int[] imgHist){
+		System.out.println(counter);
+		String key = entry.getKey();
+		int[] hist = entry.getValue();
+
+		distI.put(key, EuclidianDistance.getEuclidianDistance(hist, imgHist));
+		counter++;
+	}
+
 	private void updateThumbnails(){
 		distI.remove(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
 		Double min = Collections.min(distI.values());

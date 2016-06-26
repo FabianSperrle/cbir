@@ -23,48 +23,16 @@ public class EuclidianDistance {
         return Math.sqrt(sum);
     }
 
-    public static double getEuclidianDistance(Integer[] a, Integer[] b) {
+    public static double getEuclidianDistance(int[] a, int[] b) {
         double[] weights = new double[a.length];
         Arrays.fill(weights, 1);
         return getEuclidianDistance(a, b, weights);
     }
 
-    public static double getEuclidianDistance(Integer[] a, Integer[] b, double[] weights) {
+    public static double getEuclidianDistance(int[] a, int[] b, double[] weights) {
         double sum = 0;
         for (int i = 0; i < a.length; i++) {
             sum += weights[i] * Math.pow(a[i] - b[i], 2);
-        }
-
-        return Math.sqrt(sum);
-    }
-
-    public static double getEuclidianDistance(Integer[][][] a, Integer[][][] b) {
-        double[] weights = new double[a.length];
-        Arrays.fill(weights, 1);
-        return getEuclidianDistance(a, b, weights);
-    }
-
-    public static double getEuclidianDistance(Integer[][][] a, Integer[][][] b, double[] weights) {
-        double sum = 0;
-        for (int i = 0; i < a.length; i++) {
-            for (int j = 0; j < a.length; j++) {
-                for (int k = 0; k < a.length; k++) {
-                    sum += weights[i] * Math.pow(a[i][j][k] - b[i][j][k], 2);
-                }
-            }
-        }
-
-        return Math.sqrt(sum);
-    }
-
-    public static double getEuclidianDistance(double[][][] a, double[][][] b) {
-        double sum = 0;
-        for (int i = 0; i < a.length; i++) {
-            for (int j = 0; j < a.length; j++) {
-                for (int k = 0; k < a.length; k++) {
-                    sum += Math.pow(a[i][j][k] - b[i][j][k], 2);
-                }
-            }
         }
 
         return Math.sqrt(sum);

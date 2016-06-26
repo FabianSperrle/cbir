@@ -11,6 +11,12 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.security.MessageDigest;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -28,6 +34,22 @@ public class EdgeHistogram implements FeatureDescriptor {
         this.horizontalSobel = new double[]{1, 2, 1,
                 0, 0, -0,
                 -1, -2, -1};
+    }
+
+    public int[] getHistogram(BufferedImage im, Path p) {
+        final int[] histogram = getHistogram(im);
+        String fileName = "cache/histogram/edges/" + String.valueOf(Math.abs(p.toAbsolutePath().toString().hashCode()));
+        List<String> values = new LinkedList<>();
+        for (int count : histogram) {
+            values.add(String.valueOf(count));
+        }
+        try {
+            Files.write(Paths.get(fileName), values, StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return histogram;
     }
 
     public int[] getHistogram(BufferedImage im) {

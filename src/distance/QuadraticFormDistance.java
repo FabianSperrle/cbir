@@ -7,11 +7,16 @@ import org.apache.commons.math3.linear.SingularValueDecomposition;
 import utils.HumanPerceptionSimilarityMatrix;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by fabian on 24.06.2016.
  */
 public class QuadraticFormDistance {
+
+    private static Map<Integer, RealMatrix> vCache = new HashMap<>();
+    private static Map<Integer, double[]> eigenvalueCache = new HashMap<>();
 
     public static double getQuadricFormDistance(double[] p, double[] q) {
         return getQuadricFormDistance(p, q, p.length, 256);
@@ -22,10 +27,18 @@ public class QuadraticFormDistance {
     }
 
     public static double getQuadricFormDistance(double[] p, double[] q, int bins, int dim) {
-        final Array2DRowRealMatrix similarityMatrix= new Array2DRowRealMatrix(HumanPerceptionSimilarityMatrix.createHumanPerceptionSimilarityMatrix(bins));
-        final EigenDecomposition evd = new EigenDecomposition(similarityMatrix);
-        final RealMatrix v = evd.getV();
-        final double[] eigenvalues = evd.getRealEigenvalues();
+        RealMatrix v;
+        double[] eigenvalues;
+        if (vCache.containsKey(bins)) {
+            v = vCache.get(bins);
+            eigenvalues = eigenvalueCache.get(bins);
+
+        } else {
+            final Array2DRowRealMatrix similarityMatrix= new Array2DRowRealMatrix(HumanPerceptionSimilarityMatrix.createHumanPerceptionSimilarityMatrix(bins));
+            final EigenDecomposition evd = new EigenDecomposition(similarityMatrix);
+            v = evd.getV();
+            eigenvalues = evd.getRealEigenvalues();
+        }
 
         p = v.preMultiply(p);
         q = v.preMultiply(q);
