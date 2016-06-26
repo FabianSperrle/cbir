@@ -22,8 +22,6 @@ import feature.ColourHistogram;
 
 
 public class CHistPanel extends JPanel {
-	 	File folder;
-	    File[] listOfFiles;
 		private ArrayList<ArrayList<List<Integer>>> CHistList;
 		private Map<String,ArrayList<List<Integer>>> CHistListDict = new HashMap<String,ArrayList<List<Integer>>>();
 		int counter;
@@ -48,9 +46,7 @@ public class CHistPanel extends JPanel {
 
 		public ArrayList<ArrayList<List<Integer>>> createHCHistograms(){
 			
-			folder = new File("F:/Eclipse/workspace/cbir/101_ObjectCategories/");
-			listOfFiles= folder.listFiles();
-			try (Stream<Path> paths = Files.walk(Paths.get("F:/Eclipse/workspace/cbir/101_ObjectCategories/"))) {
+			try (Stream<Path> paths = Files.walk(Paths.get("../cbir/101_ObjectCategories/"))) {
 			      //paths.forEach(System.out::println);
 				paths.parallel()
                 .filter((p) -> !p.toFile().isDirectory())

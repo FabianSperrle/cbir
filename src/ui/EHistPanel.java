@@ -22,8 +22,6 @@ import feature.ColourHistogram;
 import feature.EdgeHistogram;
 
 public class EHistPanel extends JPanel {
-	File folder;
-    File[] listOfFiles;
 	private ArrayList<ArrayList<List<Integer>>> EHistList;
 	private Map<String, ArrayList<Integer>> EHistListDict = new HashMap<String,ArrayList<Integer>>();
 	int counter;
@@ -48,8 +46,6 @@ public class EHistPanel extends JPanel {
 
 	public ArrayList<ArrayList<List<Integer>>> createEHistograms(){
 		
-		folder = new File("F:/Eclipse/workspace/cbir/101_ObjectCategories/");
-		listOfFiles= folder.listFiles();
 		try (Stream<Path> paths = Files.walk(Paths.get("../cbir/101_ObjectCategories/"))) {
 		      //paths.forEach(System.out::println);
 			paths.parallel()
