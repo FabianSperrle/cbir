@@ -1,37 +1,35 @@
 package ui;
 
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Desktop;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.Image;
+import java.awt.Insets;
+import java.awt.ItemSelectable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
-import java.util.Objects;
-import java.util.Set;
 import java.util.SortedSet;
-import java.util.TreeMap;
+
 import java.util.TreeSet;
 
 import javax.imageio.ImageIO;
-import javax.swing.BorderFactory;
+
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
@@ -41,7 +39,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.filechooser.FileSystemView;
+import javax.swing.border.EmptyBorder;
 
 import feature.ColourHistogram;
 import feature.EdgeHistogram;
@@ -53,35 +51,35 @@ import distance.QuadraticFormDistance;
 public class MainPanel {
 
 	private JFrame frame;
-	/** Provides nice icons and names for files. */
-	private FileSystemView fileSystemView;
-	/** Used to open/edit/print files. */
-	private Desktop desktop;
 
 	private File selectedFile;
 	private BufferedImage img;
 
 	//The Feature Extraction Methods
-	ColourHistogram cHist;
-	EdgeHistogram eHist;
-	HaralickTexture hFeature;
+	private ColourHistogram cHist;
+	private EdgeHistogram eHist;
+	private HaralickTexture hFeature;
 
-	PicturePanel panel;
-	JLabel l;
-	int bins;
-	Map<String,Double> distI;
-	int counter = 0;
+	private PicturePanel panel;
+	private FeaturePanel panelFeature;
+	private FeaturePanel panelDistance;
+	private Map<String,Double> distI;
+	private int counter = 0;
+	
+	private final String[] listSimilarityColorHist = {"Color Euclidean Distance","Quadratic Form Distance"};
+	private final String[] listSimilarityGlobalEdgeHist = {"Color Euclidean Distance"};
+	private final String[] listSimilarityHaralick = {"Color Euclidean Distance"};
+	private final String[] listSimilarityOpenCVHist = {"CHI","Bla"};
 
 	public MainPanel () throws IOException{
-		fileSystemView = FileSystemView.getFileSystemView();
 
 		frame = new JFrame("App");
 		frame.setVisible(true);
-		frame.setSize(new Dimension(700,700));
+		frame.setSize(new Dimension(1024,768));
 
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setLayout(new BorderLayout());
-		bins = 64;
+		int bins = 32;
 		cHist = new ColourHistogram(bins);
 
 		JLabel l = new JLabel();
@@ -91,8 +89,8 @@ public class MainPanel {
 		JButton openButton = new JButton("Open File");
 		JPanel fileChoose = new JPanel();
 		fileChoose.setLayout(new BorderLayout());
-		fileChoose.setPreferredSize(new Dimension(100,100));
-		fileChoose.add(openButton, BorderLayout.CENTER);
+		//fileChoose.setPreferredSize(new Dimension(500,600));
+		fileChoose.add(openButton, BorderLayout.NORTH);
 		openButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -111,9 +109,8 @@ public class MainPanel {
 				l.setIcon(im);
 				l.setSize(im.getIconWidth(), im.getIconHeight());
 				fileChoose.add(l, BorderLayout.EAST);
-				fileChoose.revalidate();
 				fileChoose.repaint();
-				frame.revalidate();
+				fileChoose.revalidate();
 				frame.repaint();
 
 			}
@@ -122,44 +119,133 @@ public class MainPanel {
 
 		//Panel fuer auswahl von Methods
 		JPanel methodsPanel = new JPanel();
-		methodsPanel.setLayout(new FlowLayout());
-
-		String[] listFeature = {"Color histogram","Global Edge histogram","Texture Haralick Features"};
-		JComboBox comboBoxFeature = new JComboBox<String>();
-		comboBoxFeature.setModel(new DefaultComboBoxModel(listFeature));
+		methodsPanel.setPreferredSize(new Dimension(200,200));
+		//methodsPanel.setLayout(new FlowLayout());
+		methodsPanel.setLayout(new BoxLayout(methodsPanel, BoxLayout.Y_AXIS));
+		methodsPanel.setBorder(new EmptyBorder(new Insets(20, 20, 20, 20)));		
+		String[] listFeature = {"Color histogram","Global Edge histogram","Texture Haralick Features","OpenCV Histogram", "ORB Features OpenCV"};
+		JComboBox<String> comboBoxFeature = new JComboBox<String>();
+		comboBoxFeature.setModel(new DefaultComboBoxModel<String>(listFeature));
 		comboBoxFeature.setMaximumSize( comboBoxFeature.getPreferredSize() );
+		comboBoxFeature.setAlignmentX(Component.LEFT_ALIGNMENT);
 		methodsPanel.add(comboBoxFeature);
-
-		String[] listSimilarity = {"Color Euclidean Distance ","Quadratic Form Distance"};
-		JComboBox comboBoxSimilarity = new JComboBox<String>();
-		comboBoxSimilarity.setModel(new DefaultComboBoxModel(listSimilarity));
-		comboBoxSimilarity.setMaximumSize( comboBoxSimilarity.getPreferredSize() );
-		methodsPanel.add(comboBoxSimilarity);
-
-		distI = new HashMap<String,Double>();
+		methodsPanel.add(Box.createRigidArea(new Dimension(0, 10)));	
 		
-		JButton compute = new JButton("Find similar images!");
+		JComboBox<String> comboBoxSimilarity = new JComboBox<String>();
+		comboBoxSimilarity.setModel(new DefaultComboBoxModel<String>(listSimilarityColorHist));
+		comboBoxSimilarity.setMaximumSize( comboBoxSimilarity.getPreferredSize() );
+		comboBoxSimilarity.setAlignmentX(Component.LEFT_ALIGNMENT);
+		methodsPanel.add(comboBoxSimilarity);
+		methodsPanel.add(Box.createRigidArea(new Dimension(0, 10)));	
+		
+		JPanel addPanel = new JPanel();
+		addPanel.setLayout(new GridLayout(2, 1));
+		addPanel.setBorder(new EmptyBorder(new Insets(20, 20, 20, 20)));	
+		fileChoose.add(addPanel, BorderLayout.CENTER);
+		
 		CHistPanel cpanel = new CHistPanel(bins);
 		EHistPanel epanel = new EHistPanel();
+		panelFeature = new FeaturePanel();
+		panelFeature.setLayout(new CardLayout());
+		addPanel.add(panelFeature,Box.createRigidArea(new Dimension(0, 10)));
+		panelFeature.add(cpanel,"c");
+		panelFeature.add(epanel,"e");
+		CardLayout cl = (CardLayout)(panelFeature.getLayout());
+		cl.show(panelFeature, "e");
+		ItemListener itemListener = new ItemListener() {
+			public void itemStateChanged(ItemEvent itemEvent) {
+				int state = itemEvent.getStateChange();
+				System.out.println((state == ItemEvent.SELECTED) ? "Selected" : "Deselected");
+				System.out.println("Item: " + itemEvent.getItem());
+				ItemSelectable is = itemEvent.getItemSelectable();
+				switch ((String) is.getSelectedObjects()[0]) {
+				case "Color histogram": 
+					comboBoxSimilarity.setModel(new DefaultComboBoxModel<String>(listSimilarityColorHist));
+				    cl.show(panelFeature, "c");
+					break;
+				case "Global Edge histogram":
+					comboBoxSimilarity.setModel(new DefaultComboBoxModel<String>(listSimilarityGlobalEdgeHist));
+					cl.show(panelFeature, "e");
+					break;
+				case "Texture Haralick Features":
+					comboBoxSimilarity.setModel(new DefaultComboBoxModel<String>(listSimilarityHaralick));
+					cl.show(panelFeature, "e");
+					break;
+				case "OpenCV Histogram":
+					comboBoxSimilarity.setModel(new DefaultComboBoxModel<String>(listSimilarityOpenCVHist));
+					cl.show(panelFeature, "e");
+					break;
+				default:
+					break;
+				}
+			}
+		};
+		comboBoxFeature.addItemListener(itemListener);
+		
+		QFDPanel distancePanel = new QFDPanel();
+		panelDistance = new FeaturePanel();
+		panelDistance.setLayout(new CardLayout());
+		addPanel.add(panelDistance,Box.createRigidArea(new Dimension(0, 10)));
+		panelDistance.add(distancePanel,"c");
+		panelDistance.add(new JPanel(),"e");
+		CardLayout cl2 = (CardLayout)(panelDistance.getLayout());
+		cl2.show(panelDistance, "e");
+		
+		ItemListener itemListener2 = new ItemListener() {
+			public void itemStateChanged(ItemEvent itemEvent) {
+				int state = itemEvent.getStateChange();
+				System.out.println((state == ItemEvent.SELECTED) ? "Selected" : "Deselected");
+				System.out.println("Item: " + itemEvent.getItem());
+				ItemSelectable is = itemEvent.getItemSelectable();
+				switch ((String) is.getSelectedObjects()[0]) {
+				case "Color Euclidean Distance": 
+					cl2.show(panelDistance, "e");
+					break;
+				case "Quadratic Form Distance":
+					cl2.show(panelDistance, "c");
+					break;
+				default:
+					break;
+				}
+			}
+		};
+		comboBoxSimilarity.addItemListener(itemListener2);
+		distI = new HashMap<String,Double>();
+
+		JButton compute = new JButton("Find similar images!");
+		compute.setAlignmentX(Component.LEFT_ALIGNMENT);
+		
 		compute.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				switch (comboBoxFeature.getSelectedIndex()) {
 				case 0:
-					List<List<Integer>> imgHist= cHist.getHistogram(img);
+					List<List<double[]>> imgHist= cHist.getHistogram(img);
+					switch (comboBoxSimilarity.getSelectedIndex()) {
+					case 0:
+						cpanel.getColorHistograms().entrySet()
+						.parallelStream()
+						.forEach(entry -> computeED(entry, imgHist));
+						updateThumbnails();
+						break;
+					case 1:
+						cpanel.getColorHistograms().entrySet()
+						.parallelStream()
+						.forEach(entry -> computeQFD(entry, imgHist));
+						updateThumbnails();
+						break;
 
-					cpanel.getCHistListDict().entrySet()
-							 .parallelStream()
-							 .forEach(entry -> computeQFD(entry, imgHist));
-
-					updateThumbnails();
+					default:
+						break;
+					}
+					
 					break;
 				case 1:
 					eHist = new EdgeHistogram();
-					ArrayList<Integer> imgEHist = (ArrayList<Integer>) Arrays.stream( eHist.getHistogram(img) ).boxed().collect( Collectors.toList());
-					epanel.getEHistListDict().entrySet()
-					 .parallelStream()
-					 .forEach(entry -> computeED(entry, imgEHist));
+					int[] imgEHist = eHist.getHistogram(img);
+					epanel.getEdgeHistograms().entrySet()
+					.parallelStream()
+					.forEach(entry -> computeED(entry, imgEHist));
 					updateThumbnails();
 					break;
 				case 2:
@@ -174,14 +260,14 @@ public class MainPanel {
 		});
 		methodsPanel.add(compute);
 
-		fileChoose.add(methodsPanel,BorderLayout.SOUTH);
-		fileChoose.setMaximumSize(fileChoose.getPreferredSize());
+		fileChoose.add(methodsPanel,BorderLayout.WEST);
+		fileChoose.setMinimumSize(fileChoose.getPreferredSize());
 
 		//panel für results
 		panel = new PicturePanel();
 		JScrollPane listScroller = new JScrollPane(panel);
-		listScroller.setPreferredSize(new Dimension(800,800));
-		frame.add(listScroller,BorderLayout.SOUTH);
+		listScroller.setPreferredSize(new Dimension(650,400));
+		frame.add(listScroller,BorderLayout.CENTER);
 		frame.pack();
 		frame.setVisible(true);
 
@@ -198,57 +284,76 @@ public class MainPanel {
 		sortedEntries.addAll(map.entrySet());
 		return sortedEntries;
 	}
-	private void computeQFD(Entry<String, ArrayList<List<Integer>>> entry, List<List<Integer>> imgHist){
-		System.out.println(counter);
-		String key = entry.getKey();
-		ArrayList<List<Integer>> hist = entry.getValue();
-		Double[] rgb = new Double[3];
-		
-		List<Integer> red = imgHist.get(0);
-		List<Integer> green = imgHist.get(1);
-		List<Integer> blue = imgHist.get(2);
 
-		List<Integer> red2 = hist.get(0);
-		List<Integer> green2 = hist.get(1);
-		List<Integer> blue2 = hist.get(2);
-		
-		double[] redArray = Arrays.stream(red.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
-		double[] redArray2 = Arrays.stream(red2.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
-		double[] greenArray = Arrays.stream(green.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
-		double[] greenArray2 = Arrays.stream(green2.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
-		double[] blueArray = Arrays.stream(blue.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
-		double[] blueArray2 = Arrays.stream(blue2.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
-		
-		rgb[0] = new Double (QuadraticFormDistance.getQuadricFormDistance(redArray, redArray2,4));
-		rgb[1] = new Double (QuadraticFormDistance.getQuadricFormDistance(greenArray, greenArray2,4));
-		rgb[2] = new Double (QuadraticFormDistance.getQuadricFormDistance(blueArray, blueArray2,4));
-		
-		Arrays.sort(rgb);
-		distI.put(key, rgb[rgb.length - 1]);
-		counter++;
-	}
-	private void computeQFD(Entry<String, ArrayList<Integer>> entry, ArrayList<Integer> imgHist){
+	private void computeQFD(Entry<String, double[]> entry, double[] imgHist){
 		System.out.println(counter);
 		String key = entry.getKey();
-		ArrayList<Integer> hist = entry.getValue();
-		
-		double[] array = Arrays.stream(imgHist.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
-		double[] array2 = Arrays.stream(hist.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
-		
-		distI.put(key, QuadraticFormDistance.getQuadricFormDistance(array, array2));
+		double[] hist = entry.getValue();
+
+
+		distI.put(key, QuadraticFormDistance.getQuadricFormDistance(hist, imgHist));
 		counter++;
 	}
-	private void computeED(Entry<String, ArrayList<Integer>> entry, ArrayList<Integer> imgHist){
+
+	private void computeQFD(Entry<String, List<List<double[]>>> entry, List<List<double[]>> imgHist){
 		System.out.println(counter);
 		String key = entry.getKey();
-		ArrayList<Integer> hist = entry.getValue();
-		
-		double[] array = Arrays.stream(imgHist.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
-		double[] array2 = Arrays.stream(hist.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
-		
-		distI.put(key, new Double(EuclidianDistance.getEuclidianDistance(array, array2)));
+		List<List<double[]>> hist = entry.getValue();
+
+		double distance = 0;
+		// Iterate through cells
+		for (int i = 0; i < hist.size(); i++) {
+			List<double[]> cell = hist.get(i);
+			for (int j = 0; j < cell.size(); j++) {
+				double[] histogram1 = cell.get(j);
+				double[] histogram2 = imgHist.get(i).get(j);
+				distance += QuadraticFormDistance.getQuadricFormDistance(histogram1, histogram2);
+			}
+		}
+		distance /= hist.size() * 3;
+
+		distI.put(key, distance);
 		counter++;
 	}
+
+	private void computeED(Entry<String, List<List<double[]>>> entry, List<List<double[]>> imgHist){
+		System.out.println(counter);
+		String key = entry.getKey();
+		List<List<double[]>> hist = entry.getValue();
+
+		double distance = 0;
+		// Iterate through cells
+		for (int i = 0; i < hist.size(); i++) {
+			List<double[]> cell = hist.get(i);
+			for (int j = 0; j < cell.size(); j++) {
+				double[] histogram1 = cell.get(j);
+				double[] histogram2 = imgHist.get(i).get(j);
+				distance += EuclidianDistance.getEuclidianDistance(histogram1, histogram2);
+			}
+		}
+		distance /= hist.size() * 3;
+
+		distI.put(key, distance);
+		counter++;
+	}
+	private void computeED(Entry<String, double[]> entry, double[] imgHist){
+		System.out.println(counter);
+		String key = entry.getKey();
+		double[] hist = entry.getValue();
+
+		distI.put(key, EuclidianDistance.getEuclidianDistance(hist, imgHist));
+		counter++;
+	}
+
+	private void computeED(Entry<String, int[]> entry, int[] imgHist){
+		System.out.println(counter);
+		String key = entry.getKey();
+		int[] hist = entry.getValue();
+
+		distI.put(key, EuclidianDistance.getEuclidianDistance(hist, imgHist));
+		counter++;
+	}
+
 	private void updateThumbnails(){
 		distI.remove(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
 		Double min = Collections.min(distI.values());
@@ -265,7 +370,9 @@ public class MainPanel {
 				x++;
 			}
 		}
+		frame.pack();
 		panel.showThumbnail();
+		panel.revalidate();
 		panel.repaint();
 	}
 

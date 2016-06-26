@@ -1,84 +1,73 @@
 package ui;
 
+import java.awt.FlowLayout;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Dictionary;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 
 import feature.ColourHistogram;
 
 
-public class CHistPanel extends JPanel {
-		private ArrayList<ArrayList<List<Integer>>> CHistList;
-		private Map<String,ArrayList<List<Integer>>> CHistListDict = new HashMap<String,ArrayList<List<Integer>>>();
-		int counter;
-		
-		ColourHistogram cHist;
-		
-		public CHistPanel(int bins){
-			counter = 0;
-			JButton compute = new JButton("Compute Colour Histograms!");
-			cHist = new ColourHistogram(bins);
-			CHistList = new ArrayList<ArrayList<List<Integer>>>();
-			createHCHistograms();
-		}
-		
-		public ArrayList<ArrayList<List<Integer>>> getCHistList() {
-			return CHistList;
-		}
+public class CHistPanel extends FeaturePanel {
+    private ColourHistogram cHist;
+    private Map<String, List<List<double[]>>> colorHistograms;
 
-		public void setCHistList(ArrayList<ArrayList<List<Integer>>> cHistList) {
-			CHistList = cHistList;
-		}
+    public CHistPanel(int bins) {
+    	super.setLayout(new FlowLayout());
+        super.setBorder(BorderFactory.createTitledBorder("Additional Parameters Features"));
+        JLabel binLabel = new JLabel("Number of bins :");
+        JTextField binField = new JTextField("32");
+        JLabel cellLabel = new JLabel("Number of cells :");
+        JTextField cellField = new JTextField("1");
+        super.add(binLabel);
+        super.add(binField);
+        super.add(cellLabel);
+        super.add(cellField);
+        cHist = new ColourHistogram(bins);
+        try {
+            colorHistograms = createColorHistograms();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+		super.repaint();
+    }
 
-		public ArrayList<ArrayList<List<Integer>>> createHCHistograms(){
-			
-			try (Stream<Path> paths = Files.walk(Paths.get("../cbir/101_ObjectCategories/"))) {
-			      //paths.forEach(System.out::println);
-				paths.parallel()
-                .filter((p) -> !p.toFile().isDirectory())
-                .forEach(p -> computeHist(p));
-			    } catch (IOException e) {
-			      e.printStackTrace();
-			    }
-			
-			return CHistList;
-		}
+    public Map<String, List<List<double[]>>> getColorHistograms() {
+        return colorHistograms;
+    }
 
-		private void computeHist(Path p) {
-			BufferedImage image  = null;
-			try {
-				image = ImageIO.read(p.toFile());
-				System.out.println(counter);
-				CHistList.add(cHist.getHistogram(image));
-				CHistListDict.put(p.getParent().toString() +"\\"+ p.getFileName().toString(), cHist.getHistogram(image));
-				counter ++;
-				
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+    private Map<String, List<List<double[]>>> createColorHistograms() throws IOException {
+        return Files.walk(Paths.get("101_ObjectCategories"))
+                //paths.forEach(System.out::println);
+                .parallel()
+                .unordered()
+                .peek(p -> System.out.println("p = " + p))
+                .filter(Files::isRegularFile)
+                .filter(p -> noExceptionRead(p) != null)
+                .collect(Collectors.toMap(
+                        path -> path.toAbsolutePath().toString(),
+                        path -> cHist.getHistogram(noExceptionRead(path))
+                ));
+    }
 
-		public Map<String, ArrayList<List<Integer>>> getCHistListDict() {
-			return CHistListDict;
-		}
-
-		public void setCHistListDict(Map<String, ArrayList<List<Integer>>> cHistListDict) {
-			CHistListDict = cHistListDict;
-		}
-
+    private BufferedImage noExceptionRead(Path p) {
+        try {
+            return ImageIO.read(p.toFile());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }
