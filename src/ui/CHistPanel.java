@@ -62,7 +62,7 @@ public class CHistPanel extends JPanel {
 			BufferedImage image  = null;
 			try {
 				image = ImageIO.read(p.toFile());
-				//System.out.println(counter+ "of "+listOfFiles.length);
+				System.out.println(counter);
 				CHistList.add(cHist.getHistogram(image));
 				CHistListDict.put(p.getParent().toString() +"\\"+ p.getFileName().toString(), cHist.getHistogram(image));
 				counter ++;

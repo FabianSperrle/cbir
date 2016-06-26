@@ -62,7 +62,7 @@ public class EHistPanel extends JPanel {
 		BufferedImage image  = null;
 		try {
 			image = ImageIO.read(p.toFile());
-			//System.out.println(counter+ "of "+listOfFiles.length);
+			System.out.println(counter);
 			//EHistList.add(eHist.getHistogram(image));
 			EHistListDict.put(p.getParent().toString() +"\\"+ p.getFileName().toString(),(ArrayList<Integer>) Arrays.stream( eHist.getHistogram(image) ).boxed().collect( Collectors.toList()));
 			counter ++;

@@ -81,7 +81,7 @@ public class MainPanel {
 
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setLayout(new BorderLayout());
-		bins = 128;
+		bins = 64;
 		cHist = new ColourHistogram(bins);
 
 		JLabel l = new JLabel();

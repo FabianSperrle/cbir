@@ -22,8 +22,6 @@ import javax.swing.JTabbedPane;
 
 class PicturePanel extends JPanel {
 
-    File folder = new File("F:/Eclipse/workspace/cbir/101_ObjectCategories/bonsai");
-    File[] listOfFiles = folder.listFiles();
     ImageIcon[] img ;
     JComponent lblimg;
     ArrayList<JLabel> labels = new ArrayList<JLabel>();
