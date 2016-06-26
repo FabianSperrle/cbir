@@ -148,69 +148,19 @@ public class MainPanel {
 				case 0:
 					List<List<Integer>> imgHist= cHist.getHistogram(img);
 
-
-//					List<Double[]> dist = new ArrayList<Double[]> ();
-//					Double[] rgb = new Double[3];
-//					Map<String,Double> distI = new HashMap<String,Double>();
-//
-//					for (Entry<String, ArrayList<List<Integer>>> entry : cpanel.getCHistListDict().entrySet()) {
-//						String key = entry.getKey();
-//						ArrayList<List<Integer>> hist = entry.getValue();
-//						List<Integer> red = imgHist.get(0);
-//						List<Integer> green = imgHist.get(1);
-//						List<Integer> blue = imgHist.get(2);
-//
-//						List<Integer> red2 = hist.get(0);
-//						List<Integer> green2 = hist.get(1);
-//						List<Integer> blue2 = hist.get(2);
-//
-//						//rgb[0] = (new Double(EuclidianDistance.getEuclidianDistance(red.toArray(new Integer[red.size()]), red2.toArray(new Integer[red2.size()]))));
-//						//rgb[1] = (new Double(EuclidianDistance.getEuclidianDistance(green.toArray(new Integer[green.size()]), green2.toArray(new Integer[green2.size()]))));
-//						//rgb[2] = (new Double(EuclidianDistance.getEuclidianDistance(blue.toArray(new Integer[blue.size()]), blue2.toArray(new Integer[blue2.size()]))));
-//						
-//						double[] redArray = Arrays.stream(red.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
-//						double[] redArray2 = Arrays.stream(red2.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
-//						double[] greenArray = Arrays.stream(green.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
-//						double[] greenArray2 = Arrays.stream(green2.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
-//						double[] blueArray = Arrays.stream(blue.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
-//						double[] blueArray2 = Arrays.stream(blue2.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
-//						
-//						rgb[0] = new Double (QuadraticFormDistance.getQuadricFormDistance(redArray, redArray2));
-//						rgb[1] = new Double (QuadraticFormDistance.getQuadricFormDistance(greenArray, greenArray2));
-//						rgb[2] = new Double (QuadraticFormDistance.getQuadricFormDistance(blueArray, blueArray2));
-//						dist.add(rgb);
-//						Arrays.sort(rgb);
-//						distI.put(key, rgb[rgb.length - 1]);
-//					}
 					cpanel.getCHistListDict().entrySet()
 							 .parallelStream()
 							 .forEach(entry -> computeQFD(entry, imgHist));
 
-					distI.remove(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
-					Double min = Collections.min(distI.values());
-					System.out.println(min);
-					System.out.println(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
-					SortedSet<Map.Entry<String,Double>> sorted = entriesSortedByValues(distI);
-
-					panel.setImgList(new ArrayList<String>());
-					int x = 0;
-					for(Entry<String, Double> ent : sorted) {
-						if(x <= 20) {
-							System.out.println(ent.getKey());
-							panel.addImage(ent.getKey());
-							x++;
-						}
-					}
-					panel.showThumbnail();
-					panel.repaint();
+					updateThumbnails();
 					break;
 				case 1:
 					eHist = new EdgeHistogram();
 					ArrayList<Integer> imgEHist = (ArrayList<Integer>) Arrays.stream( eHist.getHistogram(img) ).boxed().collect( Collectors.toList());
 					epanel.getEHistListDict().entrySet()
 					 .parallelStream()
-					 .forEach(entry -> computeQFD(entry, imgEHist));
-					
+					 .forEach(entry -> computeED(entry, imgEHist));
+					updateThumbnails();
 					break;
 				case 2:
 					hFeature = new HaralickTexture();
@@ -287,6 +237,36 @@ public class MainPanel {
 		
 		distI.put(key, QuadraticFormDistance.getQuadricFormDistance(array, array2));
 		counter++;
+	}
+	private void computeED(Entry<String, ArrayList<Integer>> entry, ArrayList<Integer> imgHist){
+		System.out.println(counter);
+		String key = entry.getKey();
+		ArrayList<Integer> hist = entry.getValue();
+		
+		double[] array = Arrays.stream(imgHist.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
+		double[] array2 = Arrays.stream(hist.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
+		
+		distI.put(key, new Double(EuclidianDistance.getEuclidianDistance(array, array2)));
+		counter++;
+	}
+	private void updateThumbnails(){
+		distI.remove(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
+		Double min = Collections.min(distI.values());
+		System.out.println(min);
+		System.out.println(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
+		SortedSet<Map.Entry<String,Double>> sorted = entriesSortedByValues(distI);
+
+		panel.setImgList(new ArrayList<String>());
+		int x = 0;
+		for(Entry<String, Double> ent : sorted) {
+			if(x <= 20) {
+				System.out.println(ent.getKey());
+				panel.addImage(ent.getKey());
+				x++;
+			}
+		}
+		panel.showThumbnail();
+		panel.repaint();
 	}
 
 }
