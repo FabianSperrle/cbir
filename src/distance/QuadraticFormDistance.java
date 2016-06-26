@@ -14,7 +14,7 @@ import java.util.Arrays;
 public class QuadraticFormDistance {
 
     public static double getQuadricFormDistance(double[] p, double[] q) {
-        return getQuadricFormDistance(p, q, p.length, Integer.MAX_VALUE);
+        return getQuadricFormDistance(p, q, p.length, 256);
     }
 
     public static double getQuadricFormDistance(double[] p, double[] q, int dim) {
@@ -33,10 +33,10 @@ public class QuadraticFormDistance {
         return EuclidianDistance.getEuclidianDistance(p, q, eigenvalues, Math.min(dim, p.length));
     }
 
-    public static void main(String[] args) {
-        double[] a = {1,2,3,4,5,6,7,8,9};
-        double[] b = {2,2,3,4,5,6,7,8,9};
-        final double quadricFormDistance = getQuadricFormDistance(a, b, a.length, 5);
-        System.out.println("quadricFormDistance = " + quadricFormDistance);
-    }
+//    public static void main(String[] args) {
+//        double[] a = {1,2,3,4,5,6,7,8,9};
+//        double[] b = {2,2,3,4,5,6,7,8,9};
+//        final double quadricFormDistance = getQuadricFormDistance(a, b, a.length, 5);
+//        System.out.println("quadricFormDistance = " + quadricFormDistance);
+//    }
 }

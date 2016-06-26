@@ -16,7 +16,7 @@ public class EuclidianDistance {
     public static double getEuclidianDistance(double[] a, double[] b, double[] weights, int dim) {
         double sum = 0;
         for (int i = 0; i < dim; i++) {
-            System.out.println("dim = " + dim);
+            //System.out.println("dim = " + dim);
             sum += weights[i] * Math.pow(a[i] - b[i], 2);
         }
 

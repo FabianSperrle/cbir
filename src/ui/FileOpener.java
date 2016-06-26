@@ -20,7 +20,7 @@ public class FileOpener{
     protected File createFileUI(Component parent) {
                 int result =0;
                 JFileChooser openFile = new JFileChooser();
-                openFile.setCurrentDirectory(new File(""));
+                openFile.setCurrentDirectory(new File(".."));
                 FileNameExtensionFilter filter = new FileNameExtensionFilter("Bilder","jpg", "png");
                 openFile.setFileFilter(filter);
                 result = openFile.showOpenDialog(null);

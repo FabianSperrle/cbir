@@ -25,7 +25,7 @@ public class CHistPanel extends JPanel {
 	 	File folder;
 	    File[] listOfFiles;
 		private ArrayList<ArrayList<List<Integer>>> CHistList;
-		private Map<String,ArrayList<List<Integer>>> CHistListDict = new TreeMap<String,ArrayList<List<Integer>>>();
+		private Map<String,ArrayList<List<Integer>>> CHistListDict = new HashMap<String,ArrayList<List<Integer>>>();
 		int counter;
 		
 		ColourHistogram cHist;

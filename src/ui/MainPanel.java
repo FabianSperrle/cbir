@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
@@ -47,6 +48,7 @@ import feature.EdgeHistogram;
 import feature.HaralickTexture;
 
 import distance.EuclidianDistance;
+import distance.QuadraticFormDistance;
 
 public class MainPanel {
 
@@ -58,15 +60,17 @@ public class MainPanel {
 
 	private File selectedFile;
 	private BufferedImage img;
-	
+
 	//The Feature Extraction Methods
 	ColourHistogram cHist;
 	EdgeHistogram eHist;
 	HaralickTexture hFeature;
-	
+
 	PicturePanel panel;
 	JLabel l;
 	int bins;
+	Map<String,Double> distI;
+	int counter = 0;
 
 	public MainPanel () throws IOException{
 		fileSystemView = FileSystemView.getFileSystemView();
@@ -77,11 +81,11 @@ public class MainPanel {
 
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setLayout(new BorderLayout());
-		bins = 256;
+		bins = 128;
 		cHist = new ColourHistogram(bins);
-		
+
 		JLabel l = new JLabel();
-		
+
 
 		//panel für FileChooser
 		JButton openButton = new JButton("Open File");
@@ -119,7 +123,7 @@ public class MainPanel {
 		//Panel fuer auswahl von Methods
 		JPanel methodsPanel = new JPanel();
 		methodsPanel.setLayout(new FlowLayout());
-		
+
 		String[] listFeature = {"Color histogram","Global Edge histogram","Texture Haralick Features"};
 		JComboBox comboBoxFeature = new JComboBox<String>();
 		comboBoxFeature.setModel(new DefaultComboBoxModel(listFeature));
@@ -131,62 +135,82 @@ public class MainPanel {
 		comboBoxSimilarity.setModel(new DefaultComboBoxModel(listSimilarity));
 		comboBoxSimilarity.setMaximumSize( comboBoxSimilarity.getPreferredSize() );
 		methodsPanel.add(comboBoxSimilarity);
+
+		distI = new HashMap<String,Double>();
 		
 		JButton compute = new JButton("Find similar images!");
 		CHistPanel cpanel = new CHistPanel(bins);
+		EHistPanel epanel = new EHistPanel();
 		compute.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				switch (comboBoxFeature.getSelectedIndex()) {
 				case 0:
 					List<List<Integer>> imgHist= cHist.getHistogram(img);
-					
 
-					List<Double[]> dist = new ArrayList<Double[]> ();
-					Double[] rgb = new Double[3];
-					Map<String,Double> distI = new TreeMap<String,Double>();
 
-					for (Entry<String, ArrayList<List<Integer>>> entry : cpanel.getCHistListDict().entrySet()) {
-					    String key = entry.getKey();
-					    ArrayList<List<Integer>> hist = entry.getValue();
-					    List<Integer> red = imgHist.get(0);
-						List<Integer> green = imgHist.get(1);
-						List<Integer> blue = imgHist.get(2);
-						
-						List<Integer> red2 = hist.get(0);
-						List<Integer> green2 = hist.get(1);
-						List<Integer> blue2 = hist.get(2);
+//					List<Double[]> dist = new ArrayList<Double[]> ();
+//					Double[] rgb = new Double[3];
+//					Map<String,Double> distI = new HashMap<String,Double>();
+//
+//					for (Entry<String, ArrayList<List<Integer>>> entry : cpanel.getCHistListDict().entrySet()) {
+//						String key = entry.getKey();
+//						ArrayList<List<Integer>> hist = entry.getValue();
+//						List<Integer> red = imgHist.get(0);
+//						List<Integer> green = imgHist.get(1);
+//						List<Integer> blue = imgHist.get(2);
+//
+//						List<Integer> red2 = hist.get(0);
+//						List<Integer> green2 = hist.get(1);
+//						List<Integer> blue2 = hist.get(2);
+//
+//						//rgb[0] = (new Double(EuclidianDistance.getEuclidianDistance(red.toArray(new Integer[red.size()]), red2.toArray(new Integer[red2.size()]))));
+//						//rgb[1] = (new Double(EuclidianDistance.getEuclidianDistance(green.toArray(new Integer[green.size()]), green2.toArray(new Integer[green2.size()]))));
+//						//rgb[2] = (new Double(EuclidianDistance.getEuclidianDistance(blue.toArray(new Integer[blue.size()]), blue2.toArray(new Integer[blue2.size()]))));
+//						
+//						double[] redArray = Arrays.stream(red.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
+//						double[] redArray2 = Arrays.stream(red2.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
+//						double[] greenArray = Arrays.stream(green.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
+//						double[] greenArray2 = Arrays.stream(green2.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
+//						double[] blueArray = Arrays.stream(blue.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
+//						double[] blueArray2 = Arrays.stream(blue2.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
+//						
+//						rgb[0] = new Double (QuadraticFormDistance.getQuadricFormDistance(redArray, redArray2));
+//						rgb[1] = new Double (QuadraticFormDistance.getQuadricFormDistance(greenArray, greenArray2));
+//						rgb[2] = new Double (QuadraticFormDistance.getQuadricFormDistance(blueArray, blueArray2));
+//						dist.add(rgb);
+//						Arrays.sort(rgb);
+//						distI.put(key, rgb[rgb.length - 1]);
+//					}
+					cpanel.getCHistListDict().entrySet()
+							 .parallelStream()
+							 .forEach(entry -> computeQFD(entry, imgHist));
 
-						rgb[0] = (new Double(EuclidianDistance.getEuclidianDistance(red.toArray(new Integer[red.size()]), red2.toArray(new Integer[red2.size()]))));
-						rgb[1] = (new Double(EuclidianDistance.getEuclidianDistance(green.toArray(new Integer[green.size()]), green2.toArray(new Integer[green2.size()]))));
-						rgb[2] = (new Double(EuclidianDistance.getEuclidianDistance(blue.toArray(new Integer[blue.size()]), blue2.toArray(new Integer[blue2.size()]))));
-						dist.add(rgb);
-						Arrays.sort(rgb);
-						distI.put(key, rgb[rgb.length - 1]);
-					}
-					
-					
 					distI.remove(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
 					Double min = Collections.min(distI.values());
 					System.out.println(min);
 					System.out.println(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
 					SortedSet<Map.Entry<String,Double>> sorted = entriesSortedByValues(distI);
-					
+
 					panel.setImgList(new ArrayList<String>());
 					int x = 0;
 					for(Entry<String, Double> ent : sorted) {
-					    if(x <= 20) {
-					    	System.out.println(ent.getKey());
-					    	panel.addImage(ent.getKey());
-					    	x++;
-					    }
+						if(x <= 20) {
+							System.out.println(ent.getKey());
+							panel.addImage(ent.getKey());
+							x++;
+						}
 					}
 					panel.showThumbnail();
 					panel.repaint();
 					break;
 				case 1:
 					eHist = new EdgeHistogram();
-					eHist.getHistogram(img);
+					ArrayList<Integer> imgEHist = (ArrayList<Integer>) Arrays.stream( eHist.getHistogram(img) ).boxed().collect( Collectors.toList());
+					epanel.getEHistListDict().entrySet()
+					 .parallelStream()
+					 .forEach(entry -> computeQFD(entry, imgEHist));
+					
 					break;
 				case 2:
 					hFeature = new HaralickTexture();
@@ -199,7 +223,7 @@ public class MainPanel {
 			}
 		});
 		methodsPanel.add(compute);
-		
+
 		fileChoose.add(methodsPanel,BorderLayout.SOUTH);
 		fileChoose.setMaximumSize(fileChoose.getPreferredSize());
 
@@ -213,18 +237,57 @@ public class MainPanel {
 
 	}
 	static <K,V extends Comparable<? super V>>SortedSet<Map.Entry<K,V>> entriesSortedByValues(Map<K,V> map) {
-	    SortedSet<Map.Entry<K,V>> sortedEntries = new TreeSet<Map.Entry<K,V>>(
-	        new Comparator<Map.Entry<K,V>>() {
-	            @Override public int compare(Map.Entry<K,V> e1, Map.Entry<K,V> e2) {
-	                int res = e1.getValue().compareTo(e2.getValue());
-	                return res != 0 ? res : 1;
-	            }
-	        }
-	    );
-	    sortedEntries.addAll(map.entrySet());
-	    return sortedEntries;
+		SortedSet<Map.Entry<K,V>> sortedEntries = new TreeSet<Map.Entry<K,V>>(
+				new Comparator<Map.Entry<K,V>>() {
+					@Override public int compare(Map.Entry<K,V> e1, Map.Entry<K,V> e2) {
+						int res = e1.getValue().compareTo(e2.getValue());
+						return res != 0 ? res : 1;
+					}
+				}
+				);
+		sortedEntries.addAll(map.entrySet());
+		return sortedEntries;
 	}
+	private void computeQFD(Entry<String, ArrayList<List<Integer>>> entry, List<List<Integer>> imgHist){
+		System.out.println(counter);
+		String key = entry.getKey();
+		ArrayList<List<Integer>> hist = entry.getValue();
+		Double[] rgb = new Double[3];
+		
+		List<Integer> red = imgHist.get(0);
+		List<Integer> green = imgHist.get(1);
+		List<Integer> blue = imgHist.get(2);
 
+		List<Integer> red2 = hist.get(0);
+		List<Integer> green2 = hist.get(1);
+		List<Integer> blue2 = hist.get(2);
+		
+		double[] redArray = Arrays.stream(red.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
+		double[] redArray2 = Arrays.stream(red2.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
+		double[] greenArray = Arrays.stream(green.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
+		double[] greenArray2 = Arrays.stream(green2.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
+		double[] blueArray = Arrays.stream(blue.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
+		double[] blueArray2 = Arrays.stream(blue2.stream().mapToInt(d -> d).toArray()).asDoubleStream().toArray();
+		
+		rgb[0] = new Double (QuadraticFormDistance.getQuadricFormDistance(redArray, redArray2,4));
+		rgb[1] = new Double (QuadraticFormDistance.getQuadricFormDistance(greenArray, greenArray2,4));
+		rgb[2] = new Double (QuadraticFormDistance.getQuadricFormDistance(blueArray, blueArray2,4));
+		
+		Arrays.sort(rgb);
+		distI.put(key, rgb[rgb.length - 1]);
+		counter++;
+	}
+	private void computeQFD(Entry<String, ArrayList<Integer>> entry, ArrayList<Integer> imgHist){
+		System.out.println(counter);
+		String key = entry.getKey();
+		ArrayList<Integer> hist = entry.getValue();
+		
+		double[] array = Arrays.stream(imgHist.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
+		double[] array2 = Arrays.stream(hist.stream().mapToInt(i -> i).toArray()).asDoubleStream().toArray();
+		
+		distI.put(key, QuadraticFormDistance.getQuadricFormDistance(array, array2));
+		counter++;
+	}
 
 }
 
