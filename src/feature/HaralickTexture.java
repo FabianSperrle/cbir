@@ -195,7 +195,7 @@ public class HaralickTexture {
             double result = 0;
             double sumEntropy = 0;
             for (int k = 0; k < 256 * 2 - 1; k++) {
-                sumEntropy += k * px_plus_y[i][k] * Math.log(px_plus_y[i][k] + EPSILON);
+                sumEntropy += px_plus_y[i][k] * Math.log(px_plus_y[i][k] + EPSILON);
             }
             sumEntropy *= -1;
 
@@ -214,7 +214,7 @@ public class HaralickTexture {
         for (int i = 0; i < 4; i++) {
             double result = 0;
             for (int k = 0; k < 256 * 2 - 1; k++) {
-                result += k * px_plus_y[i][k] * Math.log(px_plus_y[i][k] + EPSILON);
+                result += px_plus_y[i][k] * Math.log(px_plus_y[i][k] + EPSILON);
             }
             results.add(result * (-1));
         }
