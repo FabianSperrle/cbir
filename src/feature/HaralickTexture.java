@@ -99,7 +99,7 @@ public class HaralickTexture {
                         }
                     }
                 }
-                result += Math.pow(n, 2) * res;
+                result += Math.pow(n, 2) * res; 
             }
             results.add(result);
         }
@@ -124,7 +124,8 @@ public class HaralickTexture {
             double result = 0;
             for (int j = 0; j < 256; j++) {
                 for (int k = 0; k < 256; k++) {
-                    result += ((j * k) * p[i][j][k] - means) / (stds);
+                    result += ((j * k) * p[i][j][k] - means) / (stds); 
+
                 }
             }
             results.add(result);
@@ -249,7 +250,7 @@ public class HaralickTexture {
                 p_stats.addValue(px_minus_y[i][j]);
             }
 
-            results.add(p_stats.getVariance());
+            results.add(p_stats.getVariance()); //?
         }
 
         return finalizeResult(results);
@@ -373,4 +374,14 @@ public class HaralickTexture {
 
         return p;
     }
+    
+	public static void main(String[] args) throws IOException {
+		// TODO Auto-generated method stub
+		HaralickTexture bla = new HaralickTexture();
+		BufferedImage img = ImageIO.read(new File("F:/Eclipse/workspace/cbir/101_ObjectCategories/airplanes/image_0001.jpg"));
+		double[] r = bla.getFeatures(img);
+		for (double d : r) {
+			System.out.println(d);
+		}
+	}
 }

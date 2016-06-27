@@ -419,13 +419,12 @@ public class MainPanel {
 	}
 
 	private void updateThumbnails(){
-		distI.remove(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
+		distI.remove(selectedFile.getParent().toString() +File.separator+ selectedFile.getName().toString());
 		panel.setImgList(new ArrayList<String>());
 		distI.entrySet().stream()
 			.sorted(Map.Entry.comparingByValue())
 			.limit(20)
-			.forEach(entry -> {panel.addImage(entry.getKey());
-					System.out.println(entry.getKey());}
+			.forEach(entry -> panel.addImage(entry.getKey())
 		);
 		
 		frame.pack();
@@ -434,13 +433,12 @@ public class MainPanel {
 		panel.repaint();
 	}
 	private void updateThumbnailsMax(){
-		distI.remove(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
+		distI.remove(selectedFile.getParent().toString() +File.separator+ selectedFile.getName().toString());
 		panel.setImgList(new ArrayList<String>());
 		distI.entrySet().stream()
 			.sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
 			.limit(20)
-			.forEach(entry -> {panel.addImage(entry.getKey());
-					System.out.println(entry.getKey());}
+			.forEach(entry -> panel.addImage(entry.getKey())
 		);
 		frame.pack();
 		panel.showThumbnail();
