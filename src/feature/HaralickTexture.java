@@ -10,6 +10,10 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,6 +26,22 @@ public class HaralickTexture {
     private double[][] px_minus_y = new double[4][256];
 
     private final double EPSILON = 0.00000000001;
+    
+    public double[] getFeatures(BufferedImage im, Path p) {
+        final double[] texture = getFeatures(im);
+        String fileName = "cache/histogram/edges/" + String.valueOf(Math.abs(p.toAbsolutePath().toString().hashCode()));
+        List<String> values = new LinkedList<>();
+        for (double count : texture) {
+            values.add(String.valueOf(count));
+        }
+        try {
+            Files.write(Paths.get(fileName), values, StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return texture;
+    }
 
     public double[] getFeatures(BufferedImage img) {
         generateGrayLevelCoOccurrenceMatrix(img);

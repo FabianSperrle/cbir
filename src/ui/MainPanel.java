@@ -20,12 +20,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedSet;
 
 import java.util.TreeSet;
+import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 
@@ -146,6 +148,7 @@ public class MainPanel {
 
 		CHistPanel cpanel = new CHistPanel();
 		EHistPanel epanel = new EHistPanel();
+		HTPanel htpanel = new HTPanel();
 		OpenHistCVPanel cvpanel = new OpenHistCVPanel();
 		panelFeature = new FeaturePanel();
 		panelFeature.setLayout(new CardLayout());
@@ -234,14 +237,14 @@ public class MainPanel {
 						cpanel.getColorHistograms().entrySet()
 						.parallelStream()
 						.forEach(entry -> computeED(entry, imgHist));
-						//updateThumbnails();
+						updateThumbnails();
 						break;
 					case 1:
 						int ev = Integer.parseInt(distancePanel.getEvField().getText());
 						cpanel.getColorHistograms().entrySet()
 						.parallelStream()
 						.forEach(entry -> computeQFD(entry, imgHist,ev));
-						//updateThumbnails();
+						updateThumbnails();
 						break;
 					default:
 						break;
@@ -254,11 +257,16 @@ public class MainPanel {
 					epanel.getEdgeHistograms().entrySet()
 					.parallelStream()
 					.forEach(entry -> computeED(entry, imgEHist));
-					//updateThumbnails();
+					updateThumbnails();
 					break;
 				case 2:
 					hFeature = new HaralickTexture();
-					hFeature.getFeatures(img);
+					double[] imghfeature = hFeature.getFeatures(img);
+
+					htpanel.getHTextures().entrySet()
+					.parallelStream()
+					.forEach(entry -> computeHF(entry, imghfeature));
+					updateThumbnails();
 					break;
 				case 3:
 					switch (comboBoxSimilarity.getSelectedIndex()) {
@@ -267,30 +275,34 @@ public class MainPanel {
 						.parallelStream()
 						.forEach(entry -> computeOpenCVHist(entry, img,Imgproc.CV_COMP_CHISQR)
 								);
+						updateThumbnails();
 						break;
 					case 1:
 						cvpanel.getOpenCVMatrices().entrySet()
 						.parallelStream()
 						.forEach(entry -> computeOpenCVHist(entry, img,Imgproc.CV_COMP_CORREL)
 								);
+						updateThumbnailsMax();
 						break;
 					case 2:
 						cvpanel.getOpenCVMatrices().entrySet()
 						.parallelStream()
 						.forEach(entry -> computeOpenCVHist(entry, img,Imgproc.CV_COMP_BHATTACHARYYA)
 								);
+						updateThumbnails();
 						break;
 					default:
 						break;
 					}
 					break;
 				case 4:
+
 					break;
 
 				default:
 					break;
 				}
-				updateThumbnails();
+
 			}
 		});
 		methodsPanel.add(compute);
@@ -307,6 +319,7 @@ public class MainPanel {
 		frame.setVisible(true);
 
 	}
+
 	static <K,V extends Comparable<? super V>>SortedSet<Map.Entry<K,V>> entriesSortedByValues(Map<K,V> map) {
 		SortedSet<Map.Entry<K,V>> sortedEntries = new TreeSet<Map.Entry<K,V>>(
 				new Comparator<Map.Entry<K,V>>() {
@@ -318,6 +331,15 @@ public class MainPanel {
 				);
 		sortedEntries.addAll(map.entrySet());
 		return sortedEntries;
+	}
+
+	private void computeHF(Entry<String, double[]> entry, double[] imgHist){
+		System.out.println(counter);
+		String key = entry.getKey();
+		double[] hist = entry.getValue();
+
+		distI.put(key, EuclidianDistance.getEuclidianDistance(hist, imgHist));
+		counter++;
 	}
 
 	private void computeQFD(Entry<String, double[]> entry, double[] imgHist, int ev){
@@ -398,20 +420,28 @@ public class MainPanel {
 
 	private void updateThumbnails(){
 		distI.remove(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
-		Double min = Collections.min(distI.values());
-		System.out.println(min);
-		System.out.println(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
-		SortedSet<Map.Entry<String,Double>> sorted = entriesSortedByValues(distI);
-
 		panel.setImgList(new ArrayList<String>());
-		int x = 0;
-		for(Entry<String, Double> ent : sorted) {
-			if(x <= 20) {
-				System.out.println(ent.getKey());
-				panel.addImage(ent.getKey());
-				x++;
-			}
-		}
+		distI.entrySet().stream()
+			.sorted(Map.Entry.comparingByValue())
+			.limit(20)
+			.forEach(entry -> {panel.addImage(entry.getKey());
+					System.out.println(entry.getKey());}
+		);
+		
+		frame.pack();
+		panel.showThumbnail();
+		panel.revalidate();
+		panel.repaint();
+	}
+	private void updateThumbnailsMax(){
+		distI.remove(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
+		panel.setImgList(new ArrayList<String>());
+		distI.entrySet().stream()
+			.sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+			.limit(20)
+			.forEach(entry -> {panel.addImage(entry.getKey());
+					System.out.println(entry.getKey());}
+		);
 		frame.pack();
 		panel.showThumbnail();
 		panel.revalidate();
