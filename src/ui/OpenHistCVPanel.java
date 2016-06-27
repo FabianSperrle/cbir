@@ -55,7 +55,7 @@ public class OpenHistCVPanel extends FeaturePanel{
                 //paths.forEach(System.out::println);
                 .parallel()
                 .unordered()
-                .peek(p -> System.out.println("p = " + p))
+                .peek(p -> System.out.println("opencv p = " + p))
                 .filter(Files::isRegularFile)
                 .filter(p -> noExceptionRead(p) != null)
                 .collect(Collectors.toMap(

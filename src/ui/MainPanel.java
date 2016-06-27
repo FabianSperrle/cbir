@@ -3,7 +3,6 @@ package ui;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Component;
-import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.Image;
@@ -17,17 +16,14 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedSet;
 
 import java.util.TreeSet;
-import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 
@@ -43,6 +39,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
+import distance.CosineDistance;
 import feature.ColourHistogram;
 import feature.EdgeHistogram;
 import feature.HaralickTexture;
@@ -50,7 +47,6 @@ import feature.HaralickTexture;
 import distance.EuclidianDistance;
 import distance.QuadraticFormDistance;
 
-import org.opencv.core.Core;
 import org.opencv.imgproc.Imgproc;
 
 public class MainPanel {
@@ -73,7 +69,7 @@ public class MainPanel {
 
 	private final String[] listSimilarityColorHist = {"Color Euclidean Distance","Quadratic Form Distance"};
 	private final String[] listSimilarityGlobalEdgeHist = {"Color Euclidean Distance"};
-	private final String[] listSimilarityHaralick = {"Color Euclidean Distance"};
+	private final String[] listSimilarityHaralick = {"Color Euclidean Distance", "Cosine Similarity"};
 	private final String[] listSimilarityOpenCVHist = {"Chi-Square","Correlation", "Bhattacharyya distance"};
 
 	public MainPanel () throws IOException{
@@ -263,10 +259,23 @@ public class MainPanel {
 					hFeature = new HaralickTexture();
 					double[] imghfeature = hFeature.getFeatures(img);
 
-					htpanel.getHTextures().entrySet()
-					.parallelStream()
-					.forEach(entry -> computeHF(entry, imghfeature));
-					updateThumbnails();
+					switch (comboBoxSimilarity.getSelectedIndex()) {
+						case 0:
+                            htpanel.getHTextures().entrySet()
+                                    .parallelStream()
+                                    .forEach(entry -> computeHF(entry, imghfeature));
+                            updateThumbnails();
+							break;
+						case 1:
+							htpanel.getHTextures().entrySet()
+									.parallelStream()
+									.forEach(entry -> computeCosineDistance(entry, imghfeature));
+							updateThumbnails();
+							break;
+						default:
+							break;
+					}
+
 					break;
 				case 3:
 					switch (comboBoxSimilarity.getSelectedIndex()) {
@@ -340,6 +349,13 @@ public class MainPanel {
 
 		distI.put(key, EuclidianDistance.getEuclidianDistance(hist, imgHist));
 		counter++;
+	}
+
+	private void computeCosineDistance(Entry<String, double[]> entry, double[] imgHist){
+		String key = entry.getKey();
+		double[] hist = entry.getValue();
+
+		distI.put(key, CosineDistance.cosineDistance(hist, imgHist));
 	}
 
 	private void computeQFD(Entry<String, double[]> entry, double[] imgHist, int ev){

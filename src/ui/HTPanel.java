@@ -48,12 +48,27 @@ public class HTPanel extends FeaturePanel {
                 //paths.forEach(System.out::println);
                 .parallel()
                 .unordered()
-                .peek(p -> System.out.println("p = " + p))
+                .peek(p -> System.out.println("ht p = " + p))
                 .filter(Files::isRegularFile)
                 .filter(p -> noExceptionRead(p) != null)
                 .collect(Collectors.toMap(
                         path -> path.toAbsolutePath().toString(),
-                        path -> hTexture.getFeatures((noExceptionRead(path)))
+                        path -> {
+                            String fileName = "cache/feature/haralick/" + String.valueOf(Math.abs(path.toAbsolutePath().toString().hashCode()));
+                            if (Files.exists(Paths.get(fileName))) {
+                                try {
+                                    final List<String> strings = Files.readAllLines(Paths.get(fileName));
+                                    double[] features = new double[24];
+                                    for (int i = 0; i < 24; i++) {
+                                        features[i] = Double.valueOf(strings.get(i));
+                                    }
+                                    return features;
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            return hTexture.getFeatures(noExceptionRead(path), path);
+                        }
                 ));
     }
 
