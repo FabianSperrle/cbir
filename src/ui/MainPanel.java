@@ -15,15 +15,20 @@ import java.awt.event.ItemListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.SortedMap;
 import java.util.SortedSet;
 
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
@@ -48,6 +53,7 @@ import distance.EuclidianDistance;
 import distance.QuadraticFormDistance;
 
 import org.opencv.imgproc.Imgproc;
+
 
 public class MainPanel {
 
@@ -215,7 +221,7 @@ public class MainPanel {
 		};
 		comboBoxSimilarity.addItemListener(itemListener2);
 		distI = new HashMap<String,Double>();
-
+		
 		JButton compute = new JButton("Find similar images!");
 		compute.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -223,21 +229,24 @@ public class MainPanel {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				distI = new HashMap<String,Double>();
+				counter = 0;
 				switch (comboBoxFeature.getSelectedIndex()) {
 				case 0:
+					
 					cHist = new ColourHistogram(((Number)cpanel.getBinField().getValue()).intValue(), ((Number)cpanel.getCellField().getValue()).intValue());
 					cpanel.updateCHistPanel(((Number)cpanel.getBinField().getValue()).intValue(), ((Number)cpanel.getCellField().getValue()).intValue());
 					List<List<double[]>> imgHist= cHist.getHistogram(img);
+					Map<String, List<List<double[]>>> syncMap = Collections.synchronizedMap(cpanel.getColorHistograms());
 					switch (comboBoxSimilarity.getSelectedIndex()) {
 					case 0:
-						cpanel.getColorHistograms().entrySet()
+						syncMap.entrySet()
 						.parallelStream()
 						.forEach(entry -> computeED(entry, imgHist));
 						updateThumbnails();
 						break;
 					case 1:
 						int ev = Integer.parseInt(distancePanel.getEvField().getText());
-						cpanel.getColorHistograms().entrySet()
+						syncMap.entrySet()
 						.parallelStream()
 						.forEach(entry -> computeQFD(entry, imgHist,ev));
 						updateThumbnails();
@@ -248,9 +257,10 @@ public class MainPanel {
 
 					break;
 				case 1:
+					Map<String, int[]> syncMap1 = Collections.synchronizedMap(epanel.getEdgeHistograms());
 					eHist = new EdgeHistogram();
 					int[] imgEHist = eHist.getHistogram(img);
-					epanel.getEdgeHistograms().entrySet()
+					syncMap1.entrySet()
 					.parallelStream()
 					.forEach(entry -> computeED(entry, imgEHist));
 					updateThumbnails();
@@ -258,16 +268,17 @@ public class MainPanel {
 				case 2:
 					hFeature = new HaralickTexture();
 					double[] imghfeature = hFeature.getFeatures(img);
-
+					Map<String, double[]> syncMap11 = Collections.synchronizedMap(htpanel.getHTextures());
 					switch (comboBoxSimilarity.getSelectedIndex()) {
 						case 0:
-                            htpanel.getHTextures().entrySet()
+							syncMap11.entrySet()
                                     .parallelStream()
                                     .forEach(entry -> computeHF(entry, imghfeature));
                             updateThumbnails();
 							break;
 						case 1:
-							htpanel.getHTextures().entrySet()
+						
+							syncMap11.entrySet()
 									.parallelStream()
 									.forEach(entry -> computeCosineDistance(entry, imghfeature));
 							updateThumbnails();
@@ -278,23 +289,24 @@ public class MainPanel {
 
 					break;
 				case 3:
+					Map<String, BufferedImage> syncMap111 = Collections.synchronizedMap(cvpanel.getOpenCVMatrices());
 					switch (comboBoxSimilarity.getSelectedIndex()) {
 					case 0:
-						cvpanel.getOpenCVMatrices().entrySet()
+						syncMap111.entrySet()
 						.parallelStream()
 						.forEach(entry -> computeOpenCVHist(entry, img,Imgproc.CV_COMP_CHISQR)
 								);
 						updateThumbnails();
 						break;
 					case 1:
-						cvpanel.getOpenCVMatrices().entrySet()
+						syncMap111.entrySet()
 						.parallelStream()
 						.forEach(entry -> computeOpenCVHist(entry, img,Imgproc.CV_COMP_CORREL)
 								);
 						updateThumbnailsMax();
 						break;
 					case 2:
-						cvpanel.getOpenCVMatrices().entrySet()
+						syncMap111.entrySet()
 						.parallelStream()
 						.forEach(entry -> computeOpenCVHist(entry, img,Imgproc.CV_COMP_BHATTACHARYYA)
 								);
@@ -341,14 +353,29 @@ public class MainPanel {
 		sortedEntries.addAll(map.entrySet());
 		return sortedEntries;
 	}
+	
+	static <K,V extends Comparable<? super V>>SortedSet<Map.Entry<K,V>> entriesSortedByValuesDesc(Map<K,V> map) {
+		SortedSet<Map.Entry<K,V>> sortedEntries = new TreeSet<Map.Entry<K,V>>(
+				new Comparator<Map.Entry<K,V>>() {
+					@Override public int compare(Map.Entry<K,V> e1, Map.Entry<K,V> e2) {
+						int res = e2.getValue().compareTo(e1.getValue());
+						return res != 0 ? res : 1;
+					}
+				}
+				);
+		sortedEntries.addAll(map.entrySet());
+		return sortedEntries;
+	}
+	
+	
 
 	private void computeHF(Entry<String, double[]> entry, double[] imgHist){
-		System.out.println(counter);
+		//System.out.println(counter);
 		String key = entry.getKey();
 		double[] hist = entry.getValue();
 
 		distI.put(key, EuclidianDistance.getEuclidianDistance(hist, imgHist));
-		counter++;
+		//counter++;
 	}
 
 	private void computeCosineDistance(Entry<String, double[]> entry, double[] imgHist){
@@ -359,17 +386,17 @@ public class MainPanel {
 	}
 
 	private void computeQFD(Entry<String, double[]> entry, double[] imgHist, int ev){
-		System.out.println(counter);
+		//System.out.println(counter);
 		String key = entry.getKey();
 		double[] hist = entry.getValue();
 
 
 		distI.put(key, QuadraticFormDistance.getQuadricFormDistance(hist, imgHist, ev));
-		counter++;
+		//counter++;
 	}
 
 	private void computeQFD(Entry<String, List<List<double[]>>> entry, List<List<double[]>> imgHist, int ev){
-		System.out.println(counter);
+		//System.out.println(counter);
 		String key = entry.getKey();
 		List<List<double[]>> hist = entry.getValue();
 
@@ -386,18 +413,18 @@ public class MainPanel {
 		distance /= hist.size() * 3;
 
 		distI.put(key, distance);
-		counter++;
+		//counter++;
 	}
 	private void computeOpenCVHist(Entry<String, BufferedImage> entry, BufferedImage img, int type){
-		System.out.println(counter);
+		//System.out.println(counter);
 		String key = entry.getKey();
 
 		distI.put(key, OpenHistCVPanel.compareHistograms(img,entry.getValue(),type));
-		counter++;
+		//counter++;
 	}
 
 	private void computeED(Entry<String, List<List<double[]>>> entry, List<List<double[]>> imgHist){
-		System.out.println(counter);
+		//System.out.println(counter);
 		String key = entry.getKey();
 		List<List<double[]>> hist = entry.getValue();
 
@@ -414,48 +441,63 @@ public class MainPanel {
 		distance /= hist.size() * 3;
 
 		distI.put(key, distance);
-		counter++;
+		//counter++;
 	}
 	private void computeED(Entry<String, double[]> entry, double[] imgHist){
-		System.out.println(counter);
+		//System.out.println(counter);
 		String key = entry.getKey();
 		double[] hist = entry.getValue();
 
 		distI.put(key, EuclidianDistance.getEuclidianDistance(hist, imgHist));
-		counter++;
+		//counter++;
 	}
 
 	private void computeED(Entry<String, int[]> entry, int[] imgHist){
-		System.out.println(counter);
+		//System.out.println(counter);
 		String key = entry.getKey();
 		int[] hist = entry.getValue();
 
 		distI.put(key, EuclidianDistance.getEuclidianDistance(hist, imgHist));
-		counter++;
+		//counter++;
 	}
 
-	private void updateThumbnails(){
-		distI.remove(selectedFile.getParent().toString() +File.separator+ selectedFile.getName().toString());
-		panel.setImgList(new ArrayList<String>());
-		distI.entrySet().stream()
-			.sorted(Map.Entry.comparingByValue())
-			.limit(20)
-			.forEach(entry -> panel.addImage(entry.getKey())
-		);
-		
+ 	private void updateThumbnails(){
+ 		distI.remove(selectedFile.getParent().toString() +File.separator+ selectedFile.getName().toString());
+		Double min = Collections.min(distI.values());
+		System.out.println(min);
+		System.out.println(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
+		SortedSet<Map.Entry<String,Double>> sorted = entriesSortedByValues(distI);
+
+ 		panel.setImgList(new ArrayList<String>());
+		int x = 0;
+		for(Entry<String, Double> ent : sorted) {
+			if(x <= 20) {
+				System.out.println(ent.getKey());
+				panel.addImage(ent.getKey());
+				x++;
+			}
+		}
 		frame.pack();
 		panel.showThumbnail();
 		panel.revalidate();
 		panel.repaint();
 	}
 	private void updateThumbnailsMax(){
-		distI.remove(selectedFile.getParent().toString() +File.separator+ selectedFile.getName().toString());
+ 		distI.remove(selectedFile.getParent().toString() +File.separator+ selectedFile.getName().toString());
+		Double min = Collections.min(distI.values());
+		System.out.println(min);
+		System.out.println(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
+		SortedSet<Map.Entry<String,Double>> sorted = entriesSortedByValuesDesc(distI);
+
 		panel.setImgList(new ArrayList<String>());
-		distI.entrySet().stream()
-			.sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-			.limit(20)
-			.forEach(entry -> panel.addImage(entry.getKey())
-		);
+		int x = 0;
+		for(Entry<String, Double> ent : sorted) {
+			if(x <= 20) {
+				System.out.println(ent.getKey());
+				panel.addImage(ent.getKey());
+				x++;
+			}
+		}
 		frame.pack();
 		panel.showThumbnail();
 		panel.revalidate();
