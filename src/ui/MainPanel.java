@@ -48,6 +48,9 @@ import feature.HaralickTexture;
 import distance.EuclidianDistance;
 import distance.QuadraticFormDistance;
 
+import org.opencv.core.Core;
+import org.opencv.imgproc.Imgproc;
+
 public class MainPanel {
 
 	private JFrame frame;
@@ -65,22 +68,20 @@ public class MainPanel {
 	private FeaturePanel panelDistance;
 	private Map<String,Double> distI;
 	private int counter = 0;
-	
+
 	private final String[] listSimilarityColorHist = {"Color Euclidean Distance","Quadratic Form Distance"};
 	private final String[] listSimilarityGlobalEdgeHist = {"Color Euclidean Distance"};
 	private final String[] listSimilarityHaralick = {"Color Euclidean Distance"};
-	private final String[] listSimilarityOpenCVHist = {"CHI","Bla"};
+	private final String[] listSimilarityOpenCVHist = {"Chi-Square","Correlation", "Bhattacharyya distance"};
 
 	public MainPanel () throws IOException{
 
 		frame = new JFrame("App");
 		frame.setVisible(true);
-		frame.setSize(new Dimension(1024,768));
+		frame.setSize(new Dimension(1920,1080));
 
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setLayout(new BorderLayout());
-		int bins = 32;
-		cHist = new ColourHistogram(bins);
 
 		JLabel l = new JLabel();
 
@@ -130,21 +131,22 @@ public class MainPanel {
 		comboBoxFeature.setAlignmentX(Component.LEFT_ALIGNMENT);
 		methodsPanel.add(comboBoxFeature);
 		methodsPanel.add(Box.createRigidArea(new Dimension(0, 10)));	
-		
+
 		JComboBox<String> comboBoxSimilarity = new JComboBox<String>();
 		comboBoxSimilarity.setModel(new DefaultComboBoxModel<String>(listSimilarityColorHist));
 		comboBoxSimilarity.setMaximumSize( comboBoxSimilarity.getPreferredSize() );
 		comboBoxSimilarity.setAlignmentX(Component.LEFT_ALIGNMENT);
 		methodsPanel.add(comboBoxSimilarity);
 		methodsPanel.add(Box.createRigidArea(new Dimension(0, 10)));	
-		
+
 		JPanel addPanel = new JPanel();
 		addPanel.setLayout(new GridLayout(2, 1));
 		addPanel.setBorder(new EmptyBorder(new Insets(20, 20, 20, 20)));	
 		fileChoose.add(addPanel, BorderLayout.CENTER);
-		
-		CHistPanel cpanel = new CHistPanel(bins);
+
+		CHistPanel cpanel = new CHistPanel();
 		EHistPanel epanel = new EHistPanel();
+		OpenHistCVPanel cvpanel = new OpenHistCVPanel();
 		panelFeature = new FeaturePanel();
 		panelFeature.setLayout(new CardLayout());
 		addPanel.add(panelFeature,Box.createRigidArea(new Dimension(0, 10)));
@@ -161,7 +163,7 @@ public class MainPanel {
 				switch ((String) is.getSelectedObjects()[0]) {
 				case "Color histogram": 
 					comboBoxSimilarity.setModel(new DefaultComboBoxModel<String>(listSimilarityColorHist));
-				    cl.show(panelFeature, "c");
+					cl.show(panelFeature, "c");
 					break;
 				case "Global Edge histogram":
 					comboBoxSimilarity.setModel(new DefaultComboBoxModel<String>(listSimilarityGlobalEdgeHist));
@@ -181,7 +183,7 @@ public class MainPanel {
 			}
 		};
 		comboBoxFeature.addItemListener(itemListener);
-		
+
 		QFDPanel distancePanel = new QFDPanel();
 		panelDistance = new FeaturePanel();
 		panelDistance.setLayout(new CardLayout());
@@ -190,7 +192,7 @@ public class MainPanel {
 		panelDistance.add(new JPanel(),"e");
 		CardLayout cl2 = (CardLayout)(panelDistance.getLayout());
 		cl2.show(panelDistance, "e");
-		
+
 		ItemListener itemListener2 = new ItemListener() {
 			public void itemStateChanged(ItemEvent itemEvent) {
 				int state = itemEvent.getStateChange();
@@ -199,6 +201,9 @@ public class MainPanel {
 				ItemSelectable is = itemEvent.getItemSelectable();
 				switch ((String) is.getSelectedObjects()[0]) {
 				case "Color Euclidean Distance": 
+				case "Chi-Square":
+				case "Correlation":
+				case "Bhattacharyya distance":
 					cl2.show(panelDistance, "e");
 					break;
 				case "Quadratic Form Distance":
@@ -214,31 +219,34 @@ public class MainPanel {
 
 		JButton compute = new JButton("Find similar images!");
 		compute.setAlignmentX(Component.LEFT_ALIGNMENT);
-		
+
 		compute.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
+				distI = new HashMap<String,Double>();
 				switch (comboBoxFeature.getSelectedIndex()) {
 				case 0:
+					cHist = new ColourHistogram(((Number)cpanel.getBinField().getValue()).intValue(), ((Number)cpanel.getCellField().getValue()).intValue());
+					cpanel.updateCHistPanel(((Number)cpanel.getBinField().getValue()).intValue(), ((Number)cpanel.getCellField().getValue()).intValue());
 					List<List<double[]>> imgHist= cHist.getHistogram(img);
 					switch (comboBoxSimilarity.getSelectedIndex()) {
 					case 0:
 						cpanel.getColorHistograms().entrySet()
 						.parallelStream()
 						.forEach(entry -> computeED(entry, imgHist));
-						updateThumbnails();
+						//updateThumbnails();
 						break;
 					case 1:
+						int ev = Integer.parseInt(distancePanel.getEvField().getText());
 						cpanel.getColorHistograms().entrySet()
 						.parallelStream()
-						.forEach(entry -> computeQFD(entry, imgHist));
-						updateThumbnails();
+						.forEach(entry -> computeQFD(entry, imgHist,ev));
+						//updateThumbnails();
 						break;
-
 					default:
 						break;
 					}
-					
+
 					break;
 				case 1:
 					eHist = new EdgeHistogram();
@@ -246,16 +254,43 @@ public class MainPanel {
 					epanel.getEdgeHistograms().entrySet()
 					.parallelStream()
 					.forEach(entry -> computeED(entry, imgEHist));
-					updateThumbnails();
+					//updateThumbnails();
 					break;
 				case 2:
 					hFeature = new HaralickTexture();
 					hFeature.getFeatures(img);
 					break;
+				case 3:
+					switch (comboBoxSimilarity.getSelectedIndex()) {
+					case 0:
+						cvpanel.getOpenCVMatrices().entrySet()
+						.parallelStream()
+						.forEach(entry -> computeOpenCVHist(entry, img,Imgproc.CV_COMP_CHISQR)
+								);
+						break;
+					case 1:
+						cvpanel.getOpenCVMatrices().entrySet()
+						.parallelStream()
+						.forEach(entry -> computeOpenCVHist(entry, img,Imgproc.CV_COMP_CORREL)
+								);
+						break;
+					case 2:
+						cvpanel.getOpenCVMatrices().entrySet()
+						.parallelStream()
+						.forEach(entry -> computeOpenCVHist(entry, img,Imgproc.CV_COMP_BHATTACHARYYA)
+								);
+						break;
+					default:
+						break;
+					}
+					break;
+				case 4:
+					break;
 
 				default:
 					break;
 				}
+				updateThumbnails();
 			}
 		});
 		methodsPanel.add(compute);
@@ -285,17 +320,17 @@ public class MainPanel {
 		return sortedEntries;
 	}
 
-	private void computeQFD(Entry<String, double[]> entry, double[] imgHist){
+	private void computeQFD(Entry<String, double[]> entry, double[] imgHist, int ev){
 		System.out.println(counter);
 		String key = entry.getKey();
 		double[] hist = entry.getValue();
 
 
-		distI.put(key, QuadraticFormDistance.getQuadricFormDistance(hist, imgHist));
+		distI.put(key, QuadraticFormDistance.getQuadricFormDistance(hist, imgHist, ev));
 		counter++;
 	}
 
-	private void computeQFD(Entry<String, List<List<double[]>>> entry, List<List<double[]>> imgHist){
+	private void computeQFD(Entry<String, List<List<double[]>>> entry, List<List<double[]>> imgHist, int ev){
 		System.out.println(counter);
 		String key = entry.getKey();
 		List<List<double[]>> hist = entry.getValue();
@@ -307,12 +342,19 @@ public class MainPanel {
 			for (int j = 0; j < cell.size(); j++) {
 				double[] histogram1 = cell.get(j);
 				double[] histogram2 = imgHist.get(i).get(j);
-				distance += QuadraticFormDistance.getQuadricFormDistance(histogram1, histogram2);
+				distance += QuadraticFormDistance.getQuadricFormDistance(histogram1, histogram2, ev);
 			}
 		}
 		distance /= hist.size() * 3;
 
 		distI.put(key, distance);
+		counter++;
+	}
+	private void computeOpenCVHist(Entry<String, BufferedImage> entry, BufferedImage img, int type){
+		System.out.println(counter);
+		String key = entry.getKey();
+
+		distI.put(key, OpenHistCVPanel.compareHistograms(img,entry.getValue(),type));
 		counter++;
 	}
 

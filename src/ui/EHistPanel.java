@@ -19,6 +19,7 @@ public class EHistPanel extends FeaturePanel {
     private Map<String, int[]> edgeHistograms;
 
     public EHistPanel() {
+    	super();
     	super.setName("EHist");
         eHist = new EdgeHistogram();
         try {
