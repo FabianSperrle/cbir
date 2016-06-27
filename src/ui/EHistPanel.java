@@ -38,7 +38,7 @@ public class EHistPanel extends FeaturePanel {
                 //paths.forEach(System.out::println);
                 .parallel()
                 .unordered()
-                .peek(p -> System.out.println("p = " + p))
+                .peek(p -> System.out.println("eh p = " + p))
                 .filter(Files::isRegularFile)
                 .filter(p -> noExceptionRead(p) != null)
                 .collect(Collectors.toMap(
@@ -58,7 +58,6 @@ public class EHistPanel extends FeaturePanel {
                                 }
                             }
                             return eHist.getHistogram(noExceptionRead(path), path);
-
                         }
                 ));
     }

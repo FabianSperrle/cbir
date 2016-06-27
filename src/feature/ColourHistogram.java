@@ -5,6 +5,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.*;
+import java.nio.file.*;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -30,6 +32,36 @@ public class ColourHistogram implements FeatureDescriptor {
          this.binWidth = 256 / bins;
          this.cells = 1;
      }
+
+    public int getCells() {
+        return cells;
+    }
+
+    public int getBins() {
+        return bins;
+    }
+
+    public List<List<double[]>> getHistogram(BufferedImage im, Path path) {
+        final List<List<double[]>> histogram = getHistogram(im);
+        String fileName = "cache/histogram/color/" + cells + "/" + bins + "/" + String.valueOf(Math.abs(path.toAbsolutePath().toString().hashCode()));
+        try {
+            File out = new File(fileName);
+            File parent = out.getParentFile();
+            if(!parent.exists() && !parent.mkdirs()){
+                throw new IllegalStateException("Couldn't create dir: " + parent);
+            }
+            out.createNewFile();
+            BufferedOutputStream fos = new BufferedOutputStream(new FileOutputStream(out));
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(histogram);
+            oos.flush();
+            oos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException();
+        }
+        return histogram;
+    }
 
     public List<List<double[]>> getHistogram(BufferedImage im) {
         int cellHeight = (int) Math.floor(im.getHeight() / this.cells);

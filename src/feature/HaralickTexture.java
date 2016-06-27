@@ -29,7 +29,7 @@ public class HaralickTexture {
     
     public double[] getFeatures(BufferedImage im, Path p) {
         final double[] texture = getFeatures(im);
-        String fileName = "cache/histogram/edges/" + String.valueOf(Math.abs(p.toAbsolutePath().toString().hashCode()));
+        String fileName = "cache/feature/haralick/" + String.valueOf(Math.abs(p.toAbsolutePath().toString().hashCode()));
         List<String> values = new LinkedList<>();
         for (double count : texture) {
             values.add(String.valueOf(count));
@@ -77,7 +77,7 @@ public class HaralickTexture {
             double result = 0;
             for (int j = 0; j < 256; j++) {
                 for (int k = 0; k < 256; k++) {
-                    result += p[i][j][k] * p[i][j][k];
+                    result += Math.pow(p[i][j][k], 2);
                 }
             }
             results.add(result);

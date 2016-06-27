@@ -4,11 +4,12 @@ import java.awt.FlowLayout;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -124,18 +125,35 @@ public class CHistPanel extends FeaturePanel {
         return colorHistograms;
     }
 
+	@SuppressWarnings("unchecked")
     private Map<String, List<List<double[]>>> createColorHistograms() throws IOException {
+		int bins = cHist.getBins();
+		int cells = cHist.getCells();
         return Files.walk(Paths.get("101_ObjectCategories"))
                 //paths.forEach(System.out::println);
                 .parallel()
                 .unordered()
-                .peek(p -> System.out.println("p = " + p))
+                .peek(p -> System.out.println("ch p = " + p))
                 .filter(Files::isRegularFile)
                 .filter(p -> noExceptionRead(p) != null)
-                .collect(Collectors.toMap(
-                        path -> path.toAbsolutePath().toString(),
-                        path -> cHist.getHistogram(noExceptionRead(path))
-                ));
+				.collect(Collectors.toMap(
+						path -> path.toAbsolutePath().toString(),
+						path -> {
+							String fileName = "cache/histogram/color/" + cells + "/" + bins + "/" + String.valueOf(Math.abs(path.toAbsolutePath().toString().hashCode()));
+							if (Files.exists(Paths.get(fileName))) {
+								try {
+									BufferedInputStream fis = new BufferedInputStream(new FileInputStream(fileName));
+									ObjectInputStream ois = new ObjectInputStream(fis);
+									System.out.println("using the cache");
+									return (List<List<double[]>>) ois.readObject();
+								} catch (IOException | ClassNotFoundException e) {
+									e.printStackTrace();
+								}
+							}
+							System.out.println("didn't use ch cache");
+							return cHist.getHistogram(noExceptionRead(path), path);
+						}
+				));
     }
 
     private BufferedImage noExceptionRead(Path p) {
