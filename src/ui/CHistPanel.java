@@ -133,7 +133,6 @@ public class CHistPanel extends FeaturePanel {
                 //paths.forEach(System.out::println);
                 .parallel()
                 .unordered()
-                .peek(p -> System.out.println("ch p = " + p))
                 .filter(Files::isRegularFile)
                 .filter(p -> noExceptionRead(p) != null)
 				.collect(Collectors.toMap(
@@ -144,13 +143,14 @@ public class CHistPanel extends FeaturePanel {
 								try {
 									BufferedInputStream fis = new BufferedInputStream(new FileInputStream(fileName));
 									ObjectInputStream ois = new ObjectInputStream(fis);
-									System.out.println("using the cache");
-									return (List<List<double[]>>) ois.readObject();
+									final List<List<double[]>> lists = (List<List<double[]>>) ois.readObject();
+									fis.close();
+									ois.close();
+									return lists;
 								} catch (IOException | ClassNotFoundException e) {
 									e.printStackTrace();
 								}
 							}
-							System.out.println("didn't use ch cache");
 							return cHist.getHistogram(noExceptionRead(path), path);
 						}
 				));

@@ -73,8 +73,8 @@ public class MainPanel {
 	private Map<String,Double> distI;
 	private int counter = 0;
 
-	private final String[] listSimilarityColorHist = {"Color Euclidean Distance","Quadratic Form Distance"};
-	private final String[] listSimilarityGlobalEdgeHist = {"Color Euclidean Distance"};
+	private final String[] listSimilarityColorHist = {"Color Euclidean Distance","Quadratic Form Distance", "Cosine Similarity"};
+	private final String[] listSimilarityGlobalEdgeHist = {"Color Euclidean Distance", "Cosine Similarity"};
 	private final String[] listSimilarityHaralick = {"Color Euclidean Distance", "Cosine Similarity"};
 	private final String[] listSimilarityOpenCVHist = {"Chi-Square","Correlation", "Intersection", "Bhattacharyya distance"};
 
@@ -222,7 +222,7 @@ public class MainPanel {
 		};
 		comboBoxSimilarity.addItemListener(itemListener2);
 		distI = new HashMap<String,Double>();
-		
+
 		JButton compute = new JButton("Find similar images!");
 		compute.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -233,7 +233,7 @@ public class MainPanel {
 				counter = 0;
 				switch (comboBoxFeature.getSelectedIndex()) {
 				case 0:
-					
+
 					cHist = new ColourHistogram(((Number)cpanel.getBinField().getValue()).intValue(), ((Number)cpanel.getCellField().getValue()).intValue());
 					cpanel.updateCHistPanel(((Number)cpanel.getBinField().getValue()).intValue(), ((Number)cpanel.getCellField().getValue()).intValue());
 					List<List<double[]>> imgHist= cHist.getHistogram(img);
@@ -261,6 +261,23 @@ public class MainPanel {
 					Map<String, int[]> syncMap1 = Collections.synchronizedMap(epanel.getEdgeHistograms());
 					eHist = new EdgeHistogram();
 					int[] imgEHist = eHist.getHistogram(img);
+
+					switch (comboBoxSimilarity.getSelectedIndex()) {
+						case 0:
+							epanel.getEdgeHistograms().entrySet()
+									.parallelStream()
+									.forEach(entry -> computeED(entry, imgEHist));
+							break;
+						case 1:
+							epanel.getEdgeHistograms().entrySet()
+									.parallelStream()
+									.forEach(entry -> computeCosineDistance(entry, imgEHist));
+							updateThumbnails();
+							break;
+						default:
+							break;
+					}
+
 					syncMap1.entrySet()
 					.parallelStream()
 					.forEach(entry -> computeED(entry, imgEHist));
@@ -278,7 +295,7 @@ public class MainPanel {
                             updateThumbnails();
 							break;
 						case 1:
-						
+
 							syncMap11.entrySet()
 									.parallelStream()
 									.forEach(entry -> computeCosineDistance(entry, imghfeature));
@@ -361,7 +378,7 @@ public class MainPanel {
 		sortedEntries.addAll(map.entrySet());
 		return sortedEntries;
 	}
-	
+
 	static <K,V extends Comparable<? super V>>SortedSet<Map.Entry<K,V>> entriesSortedByValuesDesc(Map<K,V> map) {
 		SortedSet<Map.Entry<K,V>> sortedEntries = new TreeSet<Map.Entry<K,V>>(
 				new Comparator<Map.Entry<K,V>>() {
@@ -374,8 +391,8 @@ public class MainPanel {
 		sortedEntries.addAll(map.entrySet());
 		return sortedEntries;
 	}
-	
-	
+
+
 
 	private void computeHF(Entry<String, double[]> entry, double[] imgHist){
 		//System.out.println(counter);
@@ -393,6 +410,12 @@ public class MainPanel {
 		distI.put(key, CosineDistance.cosineDistance(hist, imgHist));
 	}
 
+	private void computeCosineDistance(Entry<String, int[]> entry, int[] imgHist){
+		String key = entry.getKey();
+		int[] hist = entry.getValue();
+
+		distI.put(key, CosineDistance.cosineDistance(hist, imgHist));
+	}
 	private void computeQFD(Entry<String, double[]> entry, double[] imgHist, int ev){
 		//System.out.println(counter);
 		String key = entry.getKey();

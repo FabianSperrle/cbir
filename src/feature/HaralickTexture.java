@@ -46,20 +46,20 @@ public class HaralickTexture {
     public double[] getFeatures(BufferedImage img) {
         generateGrayLevelCoOccurrenceMatrix(img);
 
-        double[] features = new double[24];
+        double[] features = new double[8];
         List<Tuple<Double, Double>> results = new LinkedList<>();
 
         results.add(getAngularSecondMoment());
         results.add(getContrast());
         results.add(getCorrelation());
-        results.add(getSoSVariance());
+        /*results.add(getSoSVariance());
         results.add(getInverseDifferenceMoment());
         results.add(getSumAverage());
         results.add(getSumVariance());
-        results.add(getSumEntropy());
+        results.add(getSumEntropy());*/
         results.add(getEntropy());
-        results.add(getDifferenceVariance());
-        results.add(getDifferenceEntropy());
+        /*results.add(getDifferenceVariance());
+        results.add(getDifferenceEntropy());*/
 
         for (int i = 0; i < results.size(); i++) {
             final Tuple<Double, Double> resultTuple = results.get(i);
