@@ -19,6 +19,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class HaralickTexture {
+
+    public static int NO_HARALICK_FEATURES = 8;
+
     private double[][][] p = new double[4][256][256];
     private double[][] px = new double[4][256];
     private double[][] py = new double[4][256];
@@ -46,7 +49,7 @@ public class HaralickTexture {
     public double[] getFeatures(BufferedImage img) {
         generateGrayLevelCoOccurrenceMatrix(img);
 
-        double[] features = new double[8];
+        double[] features = new double[NO_HARALICK_FEATURES];
         List<Tuple<Double, Double>> results = new LinkedList<>();
 
         results.add(getAngularSecondMoment());
