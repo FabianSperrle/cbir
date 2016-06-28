@@ -134,6 +134,7 @@ public class MainPanel {
 		comboBoxFeature.setModel(new DefaultComboBoxModel<String>(listFeature));
 		comboBoxFeature.setMaximumSize( comboBoxFeature.getPreferredSize() );
 		comboBoxFeature.setAlignmentX(Component.LEFT_ALIGNMENT);
+		comboBoxFeature.setSelectedIndex(1);
 		methodsPanel.add(comboBoxFeature);
 		methodsPanel.add(Box.createRigidArea(new Dimension(0, 10)));	
 
@@ -141,6 +142,7 @@ public class MainPanel {
 		comboBoxSimilarity.setModel(new DefaultComboBoxModel<String>(listSimilarityColorHist));
 		comboBoxSimilarity.setMaximumSize( comboBoxSimilarity.getPreferredSize() );
 		comboBoxSimilarity.setAlignmentX(Component.LEFT_ALIGNMENT);
+		comboBoxSimilarity.setModel(new DefaultComboBoxModel<String>(listSimilarityGlobalEdgeHist));
 		methodsPanel.add(comboBoxSimilarity);
 		methodsPanel.add(Box.createRigidArea(new Dimension(0, 10)));	
 
@@ -210,6 +212,7 @@ public class MainPanel {
 				case "Chi-Square":
 				case "Intersection":
 				case "Correlation":
+				case "Cosine Similarity":
 				case "Bhattacharyya distance":
 					cl2.show(panelDistance, "e");
 					break;
@@ -230,126 +233,128 @@ public class MainPanel {
 		compute.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				distI = new HashMap<String,Double>();
-				counter = 0;
-				switch (comboBoxFeature.getSelectedIndex()) {
-				case 0:
-
-					cHist = new ColourHistogram(((Number)cpanel.getBinField().getValue()).intValue(), ((Number)cpanel.getCellField().getValue()).intValue());
-					cpanel.updateCHistPanel(((Number)cpanel.getBinField().getValue()).intValue(), ((Number)cpanel.getCellField().getValue()).intValue());
-					List<List<double[]>> imgHist= cHist.getHistogram(img);
-					Map<String, List<List<double[]>>> syncMap = Collections.synchronizedMap(cpanel.getColorHistograms());
-					switch (comboBoxSimilarity.getSelectedIndex()) {
+				if (img!= null){
+					distI = new HashMap<String,Double>();
+					counter = 0;
+					switch (comboBoxFeature.getSelectedIndex()) {
 					case 0:
-						syncMap.entrySet()
-						.parallelStream()
-						.forEach(entry -> computeED(entry, imgHist));
-						updateThumbnails();
-						break;
-					case 1:
-						int ev = Integer.parseInt(distancePanel.getEvField().getText());
-						syncMap.entrySet()
-						.parallelStream()
-						.forEach(entry -> computeQFD(entry, imgHist,ev));
-						updateThumbnails();
-						break;
-					default:
-						break;
-					}
 
-					break;
-				case 1:
-					Map<String, int[]> syncMap1 = Collections.synchronizedMap(epanel.getEdgeHistograms());
-					eHist = new EdgeHistogram();
-					int[] imgEHist = eHist.getHistogram(img);
-
-					switch (comboBoxSimilarity.getSelectedIndex()) {
+						cHist = new ColourHistogram(((Number)cpanel.getBinField().getValue()).intValue(), ((Number)cpanel.getCellField().getValue()).intValue());
+						cpanel.updateCHistPanel(((Number)cpanel.getBinField().getValue()).intValue(), ((Number)cpanel.getCellField().getValue()).intValue());
+						List<List<double[]>> imgHist= cHist.getHistogram(img);
+						Map<String, List<List<double[]>>> syncMap = Collections.synchronizedMap(cpanel.getColorHistograms());
+						switch (comboBoxSimilarity.getSelectedIndex()) {
 						case 0:
-							epanel.getEdgeHistograms().entrySet()
-									.parallelStream()
-									.forEach(entry -> computeED(entry, imgEHist));
+							syncMap.entrySet()
+							.parallelStream()
+							.forEach(entry -> computeED(entry, imgHist));
+							updateThumbnails();
 							break;
 						case 1:
-							epanel.getEdgeHistograms().entrySet()
-									.parallelStream()
-									.forEach(entry -> computeCosineDistance(entry, imgEHist));
+							int ev = Integer.parseInt(distancePanel.getEvField().getText());
+							syncMap.entrySet()
+							.parallelStream()
+							.forEach(entry -> computeQFD(entry, imgHist,ev));
 							updateThumbnails();
 							break;
 						default:
 							break;
-					}
+						}
 
-					syncMap1.entrySet()
-					.parallelStream()
-					.forEach(entry -> computeED(entry, imgEHist));
-					updateThumbnails();
-					break;
-				case 2:
-					hFeature = new HaralickTexture();
-					double[] imghfeature = hFeature.getFeatures(img);
-					Map<String, double[]> syncMap11 = Collections.synchronizedMap(htpanel.getHTextures());
-					switch (comboBoxSimilarity.getSelectedIndex()) {
+						break;
+					case 1:
+						Map<String, int[]> syncMap1 = Collections.synchronizedMap(epanel.getEdgeHistograms());
+						eHist = new EdgeHistogram();
+						int[] imgEHist = eHist.getHistogram(img);
+
+						switch (comboBoxSimilarity.getSelectedIndex()) {
 						case 0:
-							syncMap11.entrySet()
-                                    .parallelStream()
-                                    .forEach(entry -> computeHF(entry, imghfeature));
-                            updateThumbnails();
+							epanel.getEdgeHistograms().entrySet()
+							.parallelStream()
+							.forEach(entry -> computeED(entry, imgEHist));
 							break;
 						case 1:
-
-							syncMap11.entrySet()
-									.parallelStream()
-									.forEach(entry -> computeCosineDistance(entry, imghfeature));
+							epanel.getEdgeHistograms().entrySet()
+							.parallelStream()
+							.forEach(entry -> computeCosineDistance(entry, imgEHist));
 							updateThumbnails();
 							break;
 						default:
 							break;
-					}
+						}
 
-					break;
-				case 3:
-					Map<String, Mat> syncMap111 = Collections.synchronizedMap(cvpanel.getOpenCVMatrices());
-					switch (comboBoxSimilarity.getSelectedIndex()) {
-					case 0:
-						syncMap111.entrySet()
+						syncMap1.entrySet()
 						.parallelStream()
-						.forEach(entry -> computeOpenCVHist(entry, OpenHistCVPanel.toCv(img),Imgproc.CV_COMP_CHISQR)
-								);
+						.forEach(entry -> computeED(entry, imgEHist));
 						updateThumbnails();
-						break;
-					case 1:
-						syncMap111.entrySet()
-						.parallelStream()
-						.forEach(entry -> computeOpenCVHist(entry, OpenHistCVPanel.toCv(img),Imgproc.CV_COMP_CORREL)
-								);
-						updateThumbnailsMax();
 						break;
 					case 2:
-						syncMap111.entrySet()
-						.parallelStream()
-						.forEach(entry -> computeOpenCVHist(entry, OpenHistCVPanel.toCv(img),Imgproc.CV_COMP_INTERSECT)
-								);
-						updateThumbnailsMax();
+						hFeature = new HaralickTexture();
+						double[] imghfeature = hFeature.getFeatures(img);
+						Map<String, double[]> syncMap11 = Collections.synchronizedMap(htpanel.getHTextures());
+						switch (comboBoxSimilarity.getSelectedIndex()) {
+						case 0:
+							syncMap11.entrySet()
+							.parallelStream()
+							.forEach(entry -> computeHF(entry, imghfeature));
+							updateThumbnails();
+							break;
+						case 1:
+
+							syncMap11.entrySet()
+							.parallelStream()
+							.forEach(entry -> computeCosineDistance(entry, imghfeature));
+							updateThumbnails();
+							break;
+						default:
+							break;
+						}
+
 						break;
 					case 3:
-						syncMap111.entrySet()
-						.parallelStream()
-						.forEach(entry -> computeOpenCVHist(entry, OpenHistCVPanel.toCv(img),Imgproc.CV_COMP_BHATTACHARYYA)
-								);
-						updateThumbnails();
+						Map<String, Mat> syncMap111 = Collections.synchronizedMap(cvpanel.getOpenCVMatrices());
+						switch (comboBoxSimilarity.getSelectedIndex()) {
+						case 0:
+							syncMap111.entrySet()
+							.parallelStream()
+							.forEach(entry -> computeOpenCVHist(entry, OpenHistCVPanel.toCv(img),Imgproc.CV_COMP_CHISQR)
+									);
+							updateThumbnails();
+							break;
+						case 1:
+							syncMap111.entrySet()
+							.parallelStream()
+							.forEach(entry -> computeOpenCVHist(entry, OpenHistCVPanel.toCv(img),Imgproc.CV_COMP_CORREL)
+									);
+							updateThumbnailsMax();
+							break;
+						case 2:
+							syncMap111.entrySet()
+							.parallelStream()
+							.forEach(entry -> computeOpenCVHist(entry, OpenHistCVPanel.toCv(img),Imgproc.CV_COMP_INTERSECT)
+									);
+							updateThumbnailsMax();
+							break;
+						case 3:
+							syncMap111.entrySet()
+							.parallelStream()
+							.forEach(entry -> computeOpenCVHist(entry, OpenHistCVPanel.toCv(img),Imgproc.CV_COMP_BHATTACHARYYA)
+									);
+							updateThumbnails();
+							break;
+						default:
+							break;
+						}
 						break;
+					case 4:
+
+						break;
+
 					default:
 						break;
 					}
-					break;
-				case 4:
 
-					break;
-
-				default:
-					break;
 				}
-
 			}
 		});
 		methodsPanel.add(compute);
@@ -452,6 +457,7 @@ public class MainPanel {
 		String key = entry.getKey();
 
 		distI.put(key, OpenHistCVPanel.compareHistograms(img,entry.getValue(),type));
+		entry.getValue().release();
 		//counter++;
 	}
 
@@ -493,14 +499,14 @@ public class MainPanel {
 		//counter++;
 	}
 
- 	private void updateThumbnails(){
- 		distI.remove(selectedFile.getParent().toString() +File.separator+ selectedFile.getName().toString());
+	private void updateThumbnails(){
+		distI.remove(selectedFile.getParent().toString() +File.separator+ selectedFile.getName().toString());
 		Double min = Collections.min(distI.values());
 		System.out.println(min);
 		System.out.println(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
 		SortedSet<Map.Entry<String,Double>> sorted = entriesSortedByValues(distI);
 
- 		panel.setImgList(new ArrayList<String>());
+		panel.setImgList(new ArrayList<String>());
 		int x = 0;
 		for(Entry<String, Double> ent : sorted) {
 			if(x < 20) {
@@ -515,7 +521,7 @@ public class MainPanel {
 		panel.repaint();
 	}
 	private void updateThumbnailsMax(){
- 		distI.remove(selectedFile.getParent().toString() +File.separator+ selectedFile.getName().toString());
+		distI.remove(selectedFile.getParent().toString() +File.separator+ selectedFile.getName().toString());
 		Double min = Collections.min(distI.values());
 		System.out.println(min);
 		System.out.println(selectedFile.getParent().toString() +"\\"+ selectedFile.getName().toString());
