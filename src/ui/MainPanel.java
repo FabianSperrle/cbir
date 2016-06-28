@@ -76,7 +76,7 @@ public class MainPanel {
 	private final String[] listSimilarityColorHist = {"Color Euclidean Distance","Quadratic Form Distance"};
 	private final String[] listSimilarityGlobalEdgeHist = {"Color Euclidean Distance"};
 	private final String[] listSimilarityHaralick = {"Color Euclidean Distance", "Cosine Similarity"};
-	private final String[] listSimilarityOpenCVHist = {"Chi-Square","Correlation", "Bhattacharyya distance"};
+	private final String[] listSimilarityOpenCVHist = {"Chi-Square","Correlation", "Intersection", "Bhattacharyya distance"};
 
 	public MainPanel () throws IOException{
 
@@ -128,7 +128,7 @@ public class MainPanel {
 		//methodsPanel.setLayout(new FlowLayout());
 		methodsPanel.setLayout(new BoxLayout(methodsPanel, BoxLayout.Y_AXIS));
 		methodsPanel.setBorder(new EmptyBorder(new Insets(20, 20, 20, 20)));		
-		String[] listFeature = {"Color histogram","Global Edge histogram","Texture Haralick Features","OpenCV Histogram", "ORB Features OpenCV"};
+		String[] listFeature = {"Color histogram","Global Edge histogram","Texture Haralick Features","OpenCV Histogram"};
 		JComboBox<String> comboBoxFeature = new JComboBox<String>();
 		comboBoxFeature.setModel(new DefaultComboBoxModel<String>(listFeature));
 		comboBoxFeature.setMaximumSize( comboBoxFeature.getPreferredSize() );
@@ -207,6 +207,7 @@ public class MainPanel {
 				switch ((String) is.getSelectedObjects()[0]) {
 				case "Color Euclidean Distance": 
 				case "Chi-Square":
+				case "Intersection":
 				case "Correlation":
 				case "Bhattacharyya distance":
 					cl2.show(panelDistance, "e");
@@ -306,6 +307,13 @@ public class MainPanel {
 						updateThumbnailsMax();
 						break;
 					case 2:
+						syncMap111.entrySet()
+						.parallelStream()
+						.forEach(entry -> computeOpenCVHist(entry, img,Imgproc.CV_COMP_INTERSECT)
+								);
+						updateThumbnailsMax();
+						break;
+					case 3:
 						syncMap111.entrySet()
 						.parallelStream()
 						.forEach(entry -> computeOpenCVHist(entry, img,Imgproc.CV_COMP_BHATTACHARYYA)
@@ -471,7 +479,7 @@ public class MainPanel {
  		panel.setImgList(new ArrayList<String>());
 		int x = 0;
 		for(Entry<String, Double> ent : sorted) {
-			if(x <= 20) {
+			if(x < 20) {
 				System.out.println(ent.getKey());
 				panel.addImage(ent.getKey());
 				x++;
@@ -492,7 +500,7 @@ public class MainPanel {
 		panel.setImgList(new ArrayList<String>());
 		int x = 0;
 		for(Entry<String, Double> ent : sorted) {
-			if(x <= 20) {
+			if(x < 20) {
 				System.out.println(ent.getKey());
 				panel.addImage(ent.getKey());
 				x++;

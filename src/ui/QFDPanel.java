@@ -21,7 +21,7 @@ public class QFDPanel extends FeaturePanel{
 		super.setBorder(BorderFactory.createTitledBorder("Additional Parameters Distance"));
         evLabel = new JLabel("Limit number of eigenvalues :");
         evField = new JFormattedTextField(NumberFormat.getNumberInstance());
-        evField.setValue(new Integer(1));
+        evField.setValue(new Integer(10));
         
         evField.addPropertyChangeListener(new PropertyChangeListener() {
 			public void propertyChange(PropertyChangeEvent e) {
