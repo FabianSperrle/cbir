@@ -52,6 +52,7 @@ import feature.HaralickTexture;
 import distance.EuclidianDistance;
 import distance.QuadraticFormDistance;
 
+import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
 
@@ -307,33 +308,33 @@ public class MainPanel {
 
 					break;
 				case 3:
-					Map<String, BufferedImage> syncMap111 = Collections.synchronizedMap(cvpanel.getOpenCVMatrices());
+					Map<String, Mat> syncMap111 = Collections.synchronizedMap(cvpanel.getOpenCVMatrices());
 					switch (comboBoxSimilarity.getSelectedIndex()) {
 					case 0:
 						syncMap111.entrySet()
 						.parallelStream()
-						.forEach(entry -> computeOpenCVHist(entry, img,Imgproc.CV_COMP_CHISQR)
+						.forEach(entry -> computeOpenCVHist(entry, OpenHistCVPanel.toCv(img),Imgproc.CV_COMP_CHISQR)
 								);
 						updateThumbnails();
 						break;
 					case 1:
 						syncMap111.entrySet()
 						.parallelStream()
-						.forEach(entry -> computeOpenCVHist(entry, img,Imgproc.CV_COMP_CORREL)
+						.forEach(entry -> computeOpenCVHist(entry, OpenHistCVPanel.toCv(img),Imgproc.CV_COMP_CORREL)
 								);
 						updateThumbnailsMax();
 						break;
 					case 2:
 						syncMap111.entrySet()
 						.parallelStream()
-						.forEach(entry -> computeOpenCVHist(entry, img,Imgproc.CV_COMP_INTERSECT)
+						.forEach(entry -> computeOpenCVHist(entry, OpenHistCVPanel.toCv(img),Imgproc.CV_COMP_INTERSECT)
 								);
 						updateThumbnailsMax();
 						break;
 					case 3:
 						syncMap111.entrySet()
 						.parallelStream()
-						.forEach(entry -> computeOpenCVHist(entry, img,Imgproc.CV_COMP_BHATTACHARYYA)
+						.forEach(entry -> computeOpenCVHist(entry, OpenHistCVPanel.toCv(img),Imgproc.CV_COMP_BHATTACHARYYA)
 								);
 						updateThumbnails();
 						break;
@@ -446,7 +447,7 @@ public class MainPanel {
 		distI.put(key, distance);
 		//counter++;
 	}
-	private void computeOpenCVHist(Entry<String, BufferedImage> entry, BufferedImage img, int type){
+	private void computeOpenCVHist(Entry<String, Mat> entry, Mat img, int type){
 		//System.out.println(counter);
 		String key = entry.getKey();
 

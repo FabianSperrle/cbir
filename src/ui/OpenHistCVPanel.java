@@ -33,12 +33,12 @@ import java.util.stream.Collectors;
 
 public class OpenHistCVPanel extends FeaturePanel{
 
-	 private Map<String, BufferedImage> openCVMatrices;
+	 private Map<String, Mat> openCVMatrices;
 	 
-	public Map<String, BufferedImage> getOpenCVMatrices() {
+	public Map<String, Mat> getOpenCVMatrices() {
 		return openCVMatrices;
 	}
-	public void setOpenCVMatrices(Map<String, BufferedImage> openCVMatrices) {
+	public void setOpenCVMatrices(Map<String, Mat> openCVMatrices) {
 		this.openCVMatrices = openCVMatrices;
 	}
 	public OpenHistCVPanel() {
@@ -51,7 +51,7 @@ public class OpenHistCVPanel extends FeaturePanel{
 		}
 		
 	}
-	private Map<String, BufferedImage> createEdgeHistograms() throws IOException {
+	private Map<String, Mat> createEdgeHistograms() throws IOException {
         return Files.walk(Paths.get("101_ObjectCategories"))
                 //paths.forEach(System.out::println);
                 .parallel()
@@ -63,23 +63,24 @@ public class OpenHistCVPanel extends FeaturePanel{
 						this::noExceptionRead
                 ));
     }
-    private BufferedImage noExceptionRead(Path p) {
+    private Mat noExceptionRead(Path p) {
         try {
-            return ImageIO.read(p.toFile());
+        	BufferedImage i = ImageIO.read(p.toFile());
+            return toCv(i);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
         }
     }
-	public static double compareHistograms(BufferedImage img1, BufferedImage img2, int CVtype){
+	public static double compareHistograms(Mat img1, Mat img2, int CVtype){
 		Mat hist0 = new Mat();
 		Mat hist1 = new Mat();
 		
 		//MatOfFloat ranges = new MatOfFloat(0f, 255f);
 		//MatOfInt histSize = new MatOfInt(32);
 		/// Convert to HSV
-	      Imgproc.cvtColor(toCv(img1), hist0, Imgproc.COLOR_BGR2HSV);
-	      Imgproc.cvtColor(toCv(img2), hist1, Imgproc.COLOR_BGR2HSV);
+	      Imgproc.cvtColor(img1, hist0, Imgproc.COLOR_BGR2HSV);
+	      Imgproc.cvtColor(img2, hist1, Imgproc.COLOR_BGR2HSV);
 
 	      /// Using 50 bins for hue and 60 for saturation
 	      int hBins = 50;
