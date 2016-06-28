@@ -74,9 +74,9 @@ public class MainPanel {
 	private Map<String,Double> distI;
 	private int counter = 0;
 
-	private final String[] listSimilarityColorHist = {"Color Euclidean Distance","Quadratic Form Distance", "Cosine Similarity"};
-	private final String[] listSimilarityGlobalEdgeHist = {"Color Euclidean Distance", "Cosine Similarity"};
-	private final String[] listSimilarityHaralick = {"Color Euclidean Distance", "Cosine Similarity"};
+	private final String[] listSimilarityColorHist = {"Euclidean Distance","Quadratic Form Distance", "Cosine Similarity"};
+	private final String[] listSimilarityGlobalEdgeHist = {"Euclidean Distance", "Cosine Similarity"};
+	private final String[] listSimilarityHaralick = {"Euclidean Distance", "Cosine Similarity"};
 	private final String[] listSimilarityOpenCVHist = {"Chi-Square","Correlation", "Intersection", "Bhattacharyya distance"};
 
 	public MainPanel () throws IOException{
@@ -459,6 +459,7 @@ public class MainPanel {
 		distI.put(key, OpenHistCVPanel.compareHistograms(img,entry.getValue(),type));
 		entry.getValue().release();
 		//counter++;
+		entry.getValue().release();
 	}
 
 	private void computeED(Entry<String, List<List<double[]>>> entry, List<List<double[]>> imgHist){

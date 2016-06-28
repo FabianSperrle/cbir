@@ -57,8 +57,8 @@ public class HTPanel extends FeaturePanel {
                             if (Files.exists(Paths.get(fileName))) {
                                 try {
                                     final List<String> strings = Files.readAllLines(Paths.get(fileName));
-                                    double[] features = new double[8];
-                                    for (int i = 0; i < 8; i++) {
+                                    double[] features = new double[HaralickTexture.NO_HARALICK_FEATURES];
+                                    for (int i = 0; i < HaralickTexture.NO_HARALICK_FEATURES; i++) {
                                         features[i] = Double.valueOf(strings.get(i));
                                     }
                                     return features;
