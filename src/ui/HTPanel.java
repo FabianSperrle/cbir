@@ -53,7 +53,7 @@ public class HTPanel extends FeaturePanel {
                 .collect(Collectors.toMap(
                         path -> path.toAbsolutePath().toString(),
                         path -> {
-                            String fileName = "cache/feature/haralick/" + String.valueOf(Math.abs(path.toAbsolutePath().toString().hashCode()));
+                            String fileName = "cache/feature/haralick/" + String.valueOf(Math.abs(path.toString().hashCode()));
                             if (Files.exists(Paths.get(fileName))) {
                                 try {
                                     final List<String> strings = Files.readAllLines(Paths.get(fileName));

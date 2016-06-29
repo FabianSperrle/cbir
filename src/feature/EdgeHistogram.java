@@ -38,7 +38,7 @@ public class EdgeHistogram implements FeatureDescriptor {
 
     public int[] getHistogram(BufferedImage im, Path p) {
         final int[] histogram = getHistogram(im);
-        String fileName = "cache/histogram/edges/" + String.valueOf(Math.abs(p.toAbsolutePath().toString().hashCode()));
+        String fileName = "cache/histogram/edges/" + String.valueOf(Math.abs(p.toString().hashCode()));
         List<String> values = new LinkedList<>();
         for (int count : histogram) {
             values.add(String.valueOf(count));

@@ -32,7 +32,7 @@ public class HaralickTexture {
     
     public double[] getFeatures(BufferedImage im, Path p) {
         final double[] texture = getFeatures(im);
-        String fileName = "cache/feature/haralick/" + String.valueOf(Math.abs(p.toAbsolutePath().toString().hashCode()));
+        String fileName = "cache/feature/haralick/" + String.valueOf(Math.abs(p.toString().hashCode()));
         List<String> values = new LinkedList<>();
         for (double count : texture) {
             values.add(String.valueOf(count));

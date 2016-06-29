@@ -43,7 +43,7 @@ public class EHistPanel extends FeaturePanel {
                 .collect(Collectors.toMap(
                         path -> path.toAbsolutePath().toString(),
                         path -> {
-                            String fileName = "cache/histogram/edges/" + String.valueOf(Math.abs(path.toAbsolutePath().toString().hashCode()));
+                            String fileName = "cache/histogram/edges/" + String.valueOf(Math.abs(path.toString().hashCode()));
                             if (Files.exists(Paths.get(fileName))) {
                                 try {
                                     final List<String> strings = Files.readAllLines(Paths.get(fileName));

@@ -43,7 +43,7 @@ public class ColourHistogram implements FeatureDescriptor {
 
     public List<List<double[]>> getHistogram(BufferedImage im, Path path) {
         final List<List<double[]>> histogram = getHistogram(im);
-        String fileName = "cache/histogram/color/" + cells + "/" + bins + "/" + String.valueOf(Math.abs(path.toAbsolutePath().toString().hashCode()));
+        String fileName = "cache/histogram/color/" + cells + "/" + bins + "/" + String.valueOf(Math.abs(path.toString().hashCode()));
         try {
             File out = new File(fileName);
             File parent = out.getParentFile();
